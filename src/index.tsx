@@ -16,7 +16,7 @@ import {
 import { useState } from "react";
 import { FaShip } from "react-icons/fa";
 
-// import logo from "../assets/logo.png";
+import logo from "../assets/logo.png";
 
 // This function calls the python function "add", which takes in two numbers and returns their sum (as a number)
 // Note the type annotations:
