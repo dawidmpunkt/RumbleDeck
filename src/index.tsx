@@ -2,7 +2,7 @@ import {
   ButtonItem,
   PanelSection,
   PanelSectionRow,
-  Navigation,
+  // Navigation,
   staticClasses
 } from "@decky/ui";
 import {
@@ -38,7 +38,7 @@ function Content() {
 
   return (
     <PanelSection title="Panel Section">
-      <PanelSectionRow>
+      {/* <PanelSectionRow>
         <ButtonItem
           layout="below"
           onClick={onClick}
@@ -53,13 +53,13 @@ function Content() {
         >
           {"Start Python timer"}
         </ButtonItem>
-      </PanelSectionRow>
+      </PanelSectionRow>*/}
 
-      {/* <PanelSectionRow>
+      <PanelSectionRow>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <img src={logo} />
         </div>
-      </PanelSectionRow> */}
+      </PanelSectionRow>
 
       {/*<PanelSectionRow>
         <ButtonItem
@@ -98,9 +98,9 @@ export default definePlugin(() => {
 
   return {
     // The name shown in various decky menus
-    name: "Test Plugin",
+    name: "RumbleDeck",
     // The element displayed at the top of your plugin's menu
-    titleView: <div className={staticClasses.Title}>Decky Example Plugin</div>,
+    titleView: <div className={staticClasses.Title}>RumbleDeck</div>,
     // The content of your plugin's menu
     content: <Content />,
     // The icon displayed in the plugin list
