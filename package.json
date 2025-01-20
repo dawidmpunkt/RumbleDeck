@@ -1,5 +1,5 @@
 {
-  "name": "rumbledeck",
+  "name": "RumbleDeck",
   "version": "0.0.1",
   "description": "A plugin to setup the DRV2605-based rumble mod via I2C. It also sniffs USB communcation for Rumble signals and sends triggers via I2C.",
   "type": "module",
