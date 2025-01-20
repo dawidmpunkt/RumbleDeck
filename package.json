@@ -1,7 +1,7 @@
 {
-  "name": "decky-plugin-template",
+  "name": "rumbledeck",
   "version": "0.0.1",
-  "description": "A template to quickly create decky plugins from scratch, based on TypeScript and webpack",
+  "description": "A plugin to setup the DRV2605-based rumble mod via I2C. It also sniffs USB communcation for Rumble signals and sends triggers via I2C.",
   "type": "module",
   "scripts": {
     "build": "rollup -c",
@@ -10,21 +10,24 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SteamDeckHomebrew/decky-plugin-template.git"
+    "url": "git+https://github.com/dawidmpunkt/RumbleDeck.git"
   },
   "keywords": [
     "decky",
     "plugin",
-    "plugin-template",
+    "rumble",
+    "haptic",
+    "i2c",
+    "DRV2605",
     "steam-deck",
     "deck"
   ],
-  "author": "You <you@you.tld>",
+"author": "Dawid Murawski <dawid.m@gmx.net>",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/SteamDeckHomebrew/decky-plugin-template/issues"
+    "url": "https://github.com/dawidmpunkt/RumbleDeck/issues"
   },
-  "homepage": "https://github.com/SteamDeckHomebrew/decky-plugin-template#readme",
+  "homepage": "https://github.com/dawidmpunkt/RumbleDeck#readme",
   "devDependencies": {
     "@decky/rollup": "^1.0.1",
     "@decky/ui": "^4.7.2",
