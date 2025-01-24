@@ -2,15 +2,14 @@ import {
   ButtonItem,
   PanelSection,
   PanelSectionRow,
-  // Navigation,
+  Navigation,
   staticClasses
 } from "@decky/ui";
 import {
-  addEventListener,
-  removeEventListener,
-  callable,
+ // addEventListener,
+  //removeEventListener,
+//  callable,
   definePlugin,
-  toaster,
   // routerHook
 } from "@decky/api"
 import { useState } from "react";
@@ -55,11 +54,11 @@ function Content() {
         </ButtonItem>
       </PanelSectionRow>
 
-      <PanelSectionRow>
+      {/* <PanelSectionRow>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <img src={logo} />
         </div>
-      </PanelSectionRow>
+      </PanelSectionRow>*/}
 
       <PanelSectionRow>
         <ButtonItem
