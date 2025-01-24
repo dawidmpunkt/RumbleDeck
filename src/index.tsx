@@ -71,8 +71,8 @@ function Content() {
         >
           Router
         </ButtonItem>
-      </PanelSectionRow>}
-    //</PanelSection>
+      </PanelSectionRow>
+    </PanelSection>
   );
 };
 
