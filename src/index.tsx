@@ -37,7 +37,7 @@ function Content() {
 
   return (
     <PanelSection title="Panel Section">
-      <PanelSectionRow>
+      {/* <PanelSectionRow>
         <ButtonItem
           layout="below"
           onClick={onClick}
@@ -52,7 +52,7 @@ function Content() {
         >
           {"Start Python timer"}
         </ButtonItem>
-      </PanelSectionRow>
+      </PanelSectionRow>*/}
 
       {/* <PanelSectionRow>
         <div style={{ display: "flex", justifyContent: "center" }}>
@@ -60,7 +60,7 @@ function Content() {
         </div>
       </PanelSectionRow>*/}
 
-      <PanelSectionRow>
+      {/*<PanelSectionRow>
         <ButtonItem
           layout="below"
           onClick={() => {
@@ -70,7 +70,7 @@ function Content() {
         >
           Router
         </ButtonItem>
-      </PanelSectionRow>
+      </PanelSectionRow>*/}
     </PanelSection>
   );
 };
