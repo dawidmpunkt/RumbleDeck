@@ -94,7 +94,7 @@ export default definePlugin(() => {
       title: "template got timer_event",
       body: `${test1}, ${test2}, ${test3}`
     });
-  });/*}
+  });*/}
 
   return {
     // The name shown in various decky menus
