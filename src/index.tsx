@@ -71,10 +71,10 @@ import logo from "../assets/logo.png";
         >
           Router
         </ButtonItem>
-      </PanelSectionRow>*/}
+      </PanelSectionRow>}
     //</PanelSection>
   );
-};
+};*/}
 
 export default definePlugin(() => {
   console.log("Template plugin initializing, this is called once on frontend startup")
