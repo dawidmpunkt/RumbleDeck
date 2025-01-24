@@ -42,7 +42,8 @@ function Content() {
           layout="below"
           //onClick={() => startTimer()}
         >
-          {"Initialize Driver"}        
+          {"Initialize Driver"}
+        </ButtonItem>
       </PanelSectionRow>
       
       {/* <PanelSectionRow>
