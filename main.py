@@ -1,4 +1,6 @@
 import os
+import subprocess
+from decky_plugin import Plugin
 
 # The decky plugin module is located at decky-loader/plugin
 # For easy intellisense checkout the decky-loader code repo
@@ -6,15 +8,43 @@ import os
 import decky
 import asyncio
 
-class Plugin:
-    # A normal method. It can be called from the TypeScript side using @decky/api.
-    async def add(self, left: int, right: int) -> int:
-        return left + right
+class SnifferPlugin(Plugin):
+    sniffer_process = None
 
-    async def long_running(self):
-        await asyncio.sleep(15)
-        # Passing through a bunch of random data, just as an example
-        await decky.emit("timer_event", "Hello from the backend!", True, 2)
+    async def on_activate(self):
+        self.logger.info("USB Sniffer Plugin Activated")
+
+    async def on_deactivate(self):
+        self.stop_sniffer()
+        self.logger.info("USB Sniffer Plugin Deactivated")
+
+    def start_sniffer(self):
+        if not self.sniffer_process:
+            self.logger.info("Starting USB Sniffer...")
+            self.sniffer_process = subprocess.Popen(
+                [os.path.join(os.path.dirname(__file__), "usb_sniffer")],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            self.logger.info("USB Sniffer started")
+
+    def stop_sniffer(self):
+        if self.sniffer_process:
+            self.logger.info("Stopping USB Sniffer...")
+            self.sniffer_process.terminate()
+            self.sniffer_process.wait()
+            self.sniffer_process = None
+            self.logger.info("USB Sniffer stopped")
+
+    def get_logs(self):
+        if self.sniffer_process:
+            try:
+                return self.sniffer_process.stdout.readline()
+            except Exception as e:
+                self.logger.error(f"Error reading sniffer output: {e}")
+                return None
+        return "Sniffer not running"
 
     # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):
@@ -32,9 +62,6 @@ class Plugin:
     async def _uninstall(self):
         decky.logger.info("Goodbye World!")
         pass
-
-    async def start_timer(self):
-        self.loop.create_task(self.long_running())
 
     # Migrations that should be performed before entering `_main()`.
     async def _migration(self):
