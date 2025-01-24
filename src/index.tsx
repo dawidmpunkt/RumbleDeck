@@ -22,19 +22,19 @@ import logo from "../assets/logo.png";
 // Note the type annotations:
 //  the first one: [first: number, second: number] is for the arguments
 //  the second one: number is for the return value
-const add = callable<[first: number, second: number], number>("add");
+//const add = callable<[first: number, second: number], number>("add");
 
 // This function calls the python function "start_timer", which takes in no arguments and returns nothing.
 // It starts a (python) timer which eventually emits the event 'timer_event'
-const startTimer = callable<[], void>("start_timer");
+//const startTimer = callable<[], void>("start_timer");
 
-function Content() {
+{/*function Content() {
   const [result, setResult] = useState<number | undefined>();
 
   const onClick = async () => {
     const result = await add(Math.random(), Math.random());
     setResult(result);
-  };
+  };*/}
 
   return (
     <PanelSection title="Panel Section">
@@ -55,11 +55,11 @@ function Content() {
         </ButtonItem>
       </PanelSectionRow>*/}
 
-      <PanelSectionRow>
+      {/* <PanelSectionRow>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <img src={logo} />
         </div>
-      </PanelSectionRow>
+      </PanelSectionRow>*/}
 
       {/*<PanelSectionRow>
         <ButtonItem
@@ -84,7 +84,7 @@ export default definePlugin(() => {
   // });
 
   // Add an event listener to the "timer_event" event from the backend
-  const listener = addEventListener<[
+  {/* const listener = addEventListener<[
     test1: string,
     test2: boolean,
     test3: number
@@ -94,7 +94,7 @@ export default definePlugin(() => {
       title: "template got timer_event",
       body: `${test1}, ${test2}, ${test3}`
     });
-  });
+  });/*}
 
   return {
     // The name shown in various decky menus
