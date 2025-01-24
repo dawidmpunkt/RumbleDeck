@@ -28,17 +28,17 @@ import logo from "../assets/logo.png";
 // It starts a (python) timer which eventually emits the event 'timer_event'
 //const startTimer = callable<[], void>("start_timer");
 
-{/*function Content() {
+function Content() {
   const [result, setResult] = useState<number | undefined>();
 
   const onClick = async () => {
     const result = await add(Math.random(), Math.random());
     setResult(result);
-  };*/}
+  };
 
-  //return (
-    //<PanelSection title="Panel Section">
-      {/* <PanelSectionRow>
+  return (
+    <PanelSection title="Panel Section">
+      <PanelSectionRow>
         <ButtonItem
           layout="below"
           onClick={onClick}
@@ -53,15 +53,15 @@ import logo from "../assets/logo.png";
         >
           {"Start Python timer"}
         </ButtonItem>
-      </PanelSectionRow>*/}
+      </PanelSectionRow>
 
-      {/* <PanelSectionRow>
+      <PanelSectionRow>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <img src={logo} />
         </div>
-      </PanelSectionRow>*/}
+      </PanelSectionRow>
 
-      {/*<PanelSectionRow>
+      <PanelSectionRow>
         <ButtonItem
           layout="below"
           onClick={() => {
@@ -74,7 +74,7 @@ import logo from "../assets/logo.png";
       </PanelSectionRow>}
     //</PanelSection>
   );
-};*/}
+};
 
 export default definePlugin(() => {
   console.log("Template plugin initializing, this is called once on frontend startup")
@@ -108,7 +108,7 @@ export default definePlugin(() => {
     // The function triggered when your plugin unloads
     onDismount() {
       console.log("Unloading")
-      removeEventListener("timer_event", listener);
+      //removeEventListener("timer_event", listener);
       // serverApi.routerHook.removeRoute("/decky-plugin-test");
     },
   };
