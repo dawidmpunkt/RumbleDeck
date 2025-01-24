@@ -2,7 +2,7 @@ import {
   ButtonItem,
   PanelSection,
   PanelSectionRow,
-  Navigation,
+  //Navigation,
   staticClasses
 } from "@decky/ui";
 import {
@@ -12,7 +12,7 @@ import {
   definePlugin,
   // routerHook
 } from "@decky/api"
-import { useState } from "react";
+//import { useState } from "react";
 import { MdOutlineVibration } from "react-icons/md";
 
 //import logo from "../assets/logo.png";
