@@ -15,7 +15,7 @@ import {
 import { useState } from "react";
 import { MdOutlineVibration } from "react-icons/md";
 
-import logo from "../assets/logo.png";
+//import logo from "../assets/logo.png";
 
 // This function calls the python function "add", which takes in two numbers and returns their sum (as a number)
 // Note the type annotations:
@@ -28,12 +28,12 @@ import logo from "../assets/logo.png";
 //const startTimer = callable<[], void>("start_timer");
 
 function Content() {
-  const [result, setResult] = useState<number | undefined>();
+  /*const [result, setResult] = useState<number | undefined>();
 
   const onClick = async () => {
     const result = await add(Math.random(), Math.random());
     setResult(result);
-  };
+  };*/
 
   return (
     <PanelSection title="Panel Section">
