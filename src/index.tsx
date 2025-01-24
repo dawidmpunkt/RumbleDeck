@@ -34,7 +34,18 @@ function Content() {
     const result = await add(Math.random(), Math.random());
     setResult(result);
   };*/
+  const [isRunning, setIsRunning] = useState(false);
 
+  const startSniffer = async () => {
+    await window.DCBackend.callBackend("start_sniffer", {});
+    setIsRunning(true);
+  };
+
+  const stopSniffer = async () => {
+    await window.DCBackend.callBackend("stop_sniffer", {});
+    setIsRunning(false);
+  };
+  
   return (
     <PanelSection title="Main Menu">
       <PanelSectionRow>
@@ -114,17 +125,6 @@ function Content() {
 export default definePlugin(() => {
   console.log("Template plugin initializing, this is called once on frontend startup")
 
-  const [isRunning, setIsRunning] = useState(false);
-
-  const startSniffer = async () => {
-    await window.DCBackend.callBackend("start_sniffer", {});
-    setIsRunning(true);
-  };
-
-  const stopSniffer = async () => {
-    await window.DCBackend.callBackend("stop_sniffer", {});
-    setIsRunning(false);
-  };
   // serverApi.routerHook.addRoute("/decky-plugin-test", DeckyPluginRouterTest, {
   //   exact: true,
   // });
