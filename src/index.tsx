@@ -12,7 +12,7 @@ import {
   definePlugin,
   // routerHook
 } from "@decky/api"
-//import { useState } from "react";
+import { useState } from "react";
 import { MdOutlineVibration } from "react-icons/md";
 
 //import logo from "../assets/logo.png";
@@ -56,6 +56,8 @@ function Content() {
         <PanelSectionRow>
         <ButtonItem
           layout="below"
+          onClick={startSniffer}
+          disabled={isRunning}
           //onClick={() => startTimer()}
         >
           {"Turn on RumbleDeck"}
@@ -64,6 +66,8 @@ function Content() {
         <PanelSectionRow>
         <ButtonItem
           layout="below"
+          onClick={stopSniffer}
+          disabled={!isRunning}
           //onClick={() => startTimer()}
         >
           {"Turn off RumbleDeck"}
@@ -110,6 +114,17 @@ function Content() {
 export default definePlugin(() => {
   console.log("Template plugin initializing, this is called once on frontend startup")
 
+  const [isRunning, setIsRunning] = useState(false);
+
+  const startSniffer = async () => {
+    await window.DCBackend.callBackend("start_sniffer", {});
+    setIsRunning(true);
+  };
+
+  const stopSniffer = async () => {
+    await window.DCBackend.callBackend("stop_sniffer", {});
+    setIsRunning(false);
+  };
   // serverApi.routerHook.addRoute("/decky-plugin-test", DeckyPluginRouterTest, {
   //   exact: true,
   // });
