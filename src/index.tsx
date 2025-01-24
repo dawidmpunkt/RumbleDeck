@@ -36,7 +36,7 @@ function Content() {
   };*/
 
   return (
-    <PanelSection title="Panel Section">
+    <PanelSection title="Main Menu">
       <PanelSectionRow>
         <ButtonItem
           layout="below"
@@ -45,7 +45,30 @@ function Content() {
           {"Initialize Driver"}
         </ButtonItem>
       </PanelSectionRow>
-      
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          //onClick={() => startTimer()}
+        >
+          {"Test Rumble"}
+        </ButtonItem>
+      </PanelSectionRow>
+        <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          //onClick={() => startTimer()}
+        >
+          {"Turn on RumbleDeck"}
+        </ButtonItem>
+      </PanelSectionRow>
+        <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          //onClick={() => startTimer()}
+        >
+          {"Turn off RumbleDeck"}
+        </ButtonItem>
+      </PanelSectionRow>
       {/* <PanelSectionRow>
         <ButtonItem
           layout="below"
