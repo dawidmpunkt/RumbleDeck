@@ -36,8 +36,8 @@ import logo from "../assets/logo.png";
     setResult(result);
   };*/}
 
-  return (
-    <PanelSection title="Panel Section">
+  //return (
+    //<PanelSection title="Panel Section">
       {/* <PanelSectionRow>
         <ButtonItem
           layout="below"
@@ -72,7 +72,7 @@ import logo from "../assets/logo.png";
           Router
         </ButtonItem>
       </PanelSectionRow>*/}
-    </PanelSection>
+    //</PanelSection>
   );
 };
 
