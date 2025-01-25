@@ -13,7 +13,7 @@ class Plugin:
     async def my_backend_function(self, parameter_a, parameter_b):
         print(f"{parameter_a} {parameter_b}")
         await decky.emit("timer_event", "Hello from the backend!", True, 2)
-        decky.logger.info("Migrating")
+        decky.logger.info("backend executed")
         decky.logger.info(print(f"{parameter_a} {parameter_b}"))
     sniffer_process = None
 
