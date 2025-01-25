@@ -15,7 +15,7 @@ class Plugin:
         await decky.emit("timer_event", "Hello from the backend!", True, 2)
         decky.logger.info("backend executed")
         decky.logger.info(print(f"{parameter_a} {parameter_b}"))
-        decky.logger.info("{parameter_a}")
+        decky.logger.info(f"{parameter_a}")
     sniffer_process = None
 
     async def on_activate(self):
