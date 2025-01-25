@@ -88,8 +88,8 @@ export default definePlugin(() => {
   ]>("my_backend_function", (test1, test2, test3) => {
     console.log("event:", test1, test2, test3)
     toaster.toast({
-      title: "template got timer_event",
-      body: `${test1}, ${test2}, ${test3}`
+      title: "Driver initialized",
+      body: `Bus number ${test1}, Adddress ${test2}, ${test3}`
     });
   });
 
