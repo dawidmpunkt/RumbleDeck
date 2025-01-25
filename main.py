@@ -11,9 +11,9 @@ import smbus
 
 #class SnifferPlugin(Plugin):
 class Plugin:
-bus = smbus.SMBus(0)
-DEVICE_ADDRESS = 0x5a
-command = [0x0C, 0x01]
+    bus = smbus.SMBus(0)
+    DEVICE_ADDRESS = 0x5a
+    command = [0x0C, 0x01]
     
     async def my_backend_function(self, parameter_a, parameter_b):
         print(f"{parameter_a} {parameter_b}")
