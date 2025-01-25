@@ -13,6 +13,8 @@ class Plugin:
     async def my_backend_function(self, parameter_a, parameter_b):
         print(f"{parameter_a} {parameter_b}")
         await decky.emit("timer_event", "Hello from the backend!", True, 2)
+        decky.logger.info("Migrating")
+        decky.logger.info(print(f"{parameter_a} {parameter_b}"))
     sniffer_process = None
 
     async def on_activate(self):
@@ -57,15 +59,15 @@ class Plugin:
 
     # Function called first during the unload process, utilize this to handle your plugin being stopped, but not
     # completely removed
-    async def _unload(self):
-        decky.logger.info("Goodnight World!")
-        pass
+    #async def _unload(self):
+     #   decky.logger.info("Goodnight World!")
+      #  pass
 
     # Function called after `_unload` during uninstall, utilize this to clean up processes and other remnants of your
     # plugin that may remain on the system
-    async def _uninstall(self):
-        decky.logger.info("Goodbye World!")
-        pass
+    #async def _uninstall(self):
+     #   decky.logger.info("Goodbye World!")
+      #  pass
 
     # Migrations that should be performed before entering `_main()`.
     async def _migration(self):
