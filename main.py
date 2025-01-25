@@ -20,6 +20,7 @@ class Plugin:
         decky.logger.info("trying to send I2C command")
         #bus.write_i2c_block_data(DEVICE_ADDRESS, cmd_test_rumble[0], cmd_test_rumble[1:])
         DEVICE_ADDRESS = hex(0x5a)
+        await decky.emit("my_backend_function", DEVICE_ADDRESS, True, 2)
         smbus.SMBus(0).write_i2c_block_data(DEVICE_ADDRESS, 12, [1])
         #smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
         await decky.emit("my_backend_function", "command sent", True, 2)
