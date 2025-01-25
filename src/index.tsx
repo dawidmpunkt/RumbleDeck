@@ -105,7 +105,7 @@ export default definePlugin(() => {
     // The function triggered when your plugin unloads
     onDismount() {
       console.log("Unloading")
-      //removeEventListener("timer_event", listener);
+      removeEventListener("my_backend_function", listener);
       // serverApi.routerHook.removeRoute("/decky-plugin-test");
     },
   };
