@@ -59,11 +59,11 @@ function Content() {
           layout="below"
           //test button with standard function
           onClick={onClick}
-          {result ?? "Text be here"}
             //onClick={startSniffer}
           disabled={isRunning}
           //onClick={() => startTimer()}
         >
+          {result ?? "Text be here"}          
           {"Turn on RumbleDeck"}
         </ButtonItem>
       </PanelSectionRow>
