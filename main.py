@@ -30,8 +30,44 @@ class Plugin:
         #decky.logger.info(f"{parameter_a}")
     sniffer_process = None
 
-    async def init_DRV2605(self):
-        bus.write_i2c_block_data(DEVICE_ADDRESS, command[0], command[1:])
+    async def drv_startup(self, both_active=False):
+        # switch to first Driver
+        bus.write_i2c_block_data(0x70, 0, [1])
+        drv_init()
+        self.logger.info("First driver initialized")
+        # switch to second Driver
+        bus.write_i2c_block_data(0x70, 0, [2])
+        drv_init()
+        self.logger.info("Second driver initialized")
+        if both_active == True:
+            # Activate both Drivers
+            bus.write_i2c_block_data(0x70, 0, [3])
+            self.logger.info("Both drivers active")
+        else 
+            # Activate only Driver 1
+            bus.write_i2c_block_data(0x70, 0, [1])
+            drv_test()
+            self.logger.info("Driver 1 active")
+
+    # initialize driver
+    async def drv_init(self)
+        bus.write_i2c_block_data(0x5a, 22, [126])
+        bus.write_i2c_block_data(0x5a, 23, [150])
+        bus.write_i2c_block_data(0x5a, 26, [54])
+        bus.write_i2c_block_data(0x5a, 27, [147])
+        bus.write_i2c_block_data(0x5a, 28, [245])
+        bus.write_i2c_block_data(0x5a, 29, [168])
+        bus.write_i2c_block_data(0x5a, 3, [1])
+        bus.write_i2c_block_data(0x5a, 1, [0])
+    
+    async def drv_test(self):
+        for x in range(3):
+        smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
+        await asyncio.sleep(0.5)
+
+    async def drv_toggle(self, drv_no):
+        #TODO
+       
     
     async def on_activate(self):
         self.logger.info("USB Sniffer Plugin Activated")
