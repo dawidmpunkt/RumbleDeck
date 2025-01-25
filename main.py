@@ -11,16 +11,16 @@ import smbus
 
 #class SnifferPlugin(Plugin):
 class Plugin:
-    bus = smbus.SMBus(0)
-    DEVICE_ADDRESS = 0x5a
-    cmd_test_rumble = [0x0C, 0x01]
+    #bus = smbus.SMBus(0)
+    #DEVICE_ADDRESS = 0x5a
+    #cmd_test_rumble = [0x0C, 0x01]
     
     async def my_backend_function(self, parameter_a, parameter_b):
         print(f"{parameter_a} {parameter_b}")
         decky.logger.info("trying to send I2C command")
         #bus.write_i2c_block_data(DEVICE_ADDRESS, cmd_test_rumble[0], cmd_test_rumble[1:])
-        smbus.SMBus(0).write_i2c_block_data(DEVICE_ADDRESS, 12, [1])
-        #smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
+        #smbus.SMBus(0).write_i2c_block_data(DEVICE_ADDRESS, 12, [1])
+        smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
         await decky.emit("my_backend_function", "command sent", True, 2)
         decky.logger.info("backend executed")
         #decky.logger.info(print(f"{parameter_a} {parameter_b}"))
