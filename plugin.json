@@ -3,7 +3,7 @@
   "author": "Dawid Murawski",
   "flags": ["debug", "_root"],
   "api_version": 1,
-  "main": "src/backend.py",  // Entry point for the backend
+  "main": "src/backend.py", 
   "publish": {
     "tags": ["Rumble", "Haptic", "DRV2605"],
     "description": "Decky Plugin to control the Steam Deck Rumble Mod via I2C.",
