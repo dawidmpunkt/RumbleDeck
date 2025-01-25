@@ -22,7 +22,7 @@ class Plugin:
         #bus.write_i2c_block_data(DEVICE_ADDRESS, cmd_test_rumble[0], cmd_test_rumble[1:])
         #smbus.SMBus(0).write_i2c_block_data(DEVICE_ADDRESS, 12, [1])
         smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
-        await decky.emit("my_backend_function", str(4), 3, 2)
+        await decky.emit("my_backend_function", str(bus_no), 3, 2)
         #await decky.emit("my_backend_function", "test", "test2", 2)
         decky.logger.info("backend executed")
         #decky.logger.info(print(f"{parameter_a} {parameter_b}"))
