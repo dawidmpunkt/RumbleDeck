@@ -29,6 +29,7 @@ const backend_function = callable<[parameter_a: string, parameter_b: string], st
 //const startTimer = callable<[], void>("start_timer");
 
 function Content() {
+  const [result, setResult] = useState<string | undefined>();
   const onClick = async () => {
     const result = await backend_function("Hello", "_World");
     setResult(result);
@@ -64,7 +65,7 @@ function Content() {
           //onClick={() => startTimer()}
         >
           {result ?? "Text be here"}          
-          {"Turn on RumbleDeck"}
+         // {"Turn on RumbleDeck"}
         </ButtonItem>
       </PanelSectionRow>
     </PanelSection>
