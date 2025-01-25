@@ -17,6 +17,7 @@ class Plugin:
     
     async def my_backend_function(self, parameter_a, parameter_b):
         print(f"{parameter_a} {parameter_b}")
+        decky.logger.info("trying to send I2C command")
         bus.write_i2c_block_data(DEVICE_ADDRESS, command[0], command[1:])
         await decky.emit("my_backend_function", "command sent", True, 2)
         decky.logger.info("backend executed")
