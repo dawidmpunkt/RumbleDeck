@@ -19,7 +19,7 @@ class Plugin:
         print(f"{parameter_a} {parameter_b}")
         bus.write_i2c_block_data(DEVICE_ADDRESS, command[0], command[1:])
         await decky.emit("my_backend_function", "command sent", True, 2)
-        #decky.logger.info("backend executed")
+        decky.logger.info("backend executed")
         #decky.logger.info(print(f"{parameter_a} {parameter_b}"))
         #decky.logger.info(f"{parameter_a}")
     sniffer_process = None
