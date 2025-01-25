@@ -89,7 +89,7 @@ export default definePlugin(() => {
     console.log("event:", test1, test2, test3)
     toaster.toast({
       title: "Driver initialized",
-      body: `Bus number ${test1}, Adddress ${test2}, ${test3}`
+      body: `Bus number ${test1}, Address ${test2}, ${test3}`
     });
   });
 
