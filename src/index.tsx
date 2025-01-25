@@ -67,7 +67,9 @@ function Content() {
         <PanelSectionRow>
         <ButtonItem
           layout="below"
-          onClick={startSniffer}
+          //test button with standard function
+          onClick={serverAPI!.callPluginMethod("my_backend_function", { "parameter_a": "Hello", "parameter_b": "World" });}
+          //onClick={startSniffer}
           disabled={isRunning}
           //onClick={() => startTimer()}
         >
