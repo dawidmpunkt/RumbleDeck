@@ -6,8 +6,8 @@ import {
   staticClasses
 } from "@decky/ui";
 import {
- // addEventListener,
-  //removeEventListener,
+  addEventListener,
+  removeEventListener,
   callable,
   definePlugin,
   toaster,
