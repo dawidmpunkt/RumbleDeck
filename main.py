@@ -8,7 +8,7 @@ from decky_plugin import Plugin
 import decky
 import asyncio
 
-//class SnifferPlugin(Plugin):
+#class SnifferPlugin(Plugin):
 class Plugin:
     async def my_backend_function(self, parameter_a, parameter_b):
         print(f"{parameter_a} {parameter_b}")
