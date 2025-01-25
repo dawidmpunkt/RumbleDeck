@@ -1,6 +1,6 @@
 import os
 import subprocess
-from decky_plugin import Plugin
+#from decky_plugin import Plugin
 
 # The decky plugin module is located at decky-loader/plugin
 # For easy intellisense checkout the decky-loader code repo
