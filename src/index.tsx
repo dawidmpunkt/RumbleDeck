@@ -10,6 +10,7 @@ import {
   //removeEventListener,
   callable,
   definePlugin,
+  toaster,
   // routerHook
 } from "@decky/api"
 import { useState } from "react";
@@ -80,17 +81,17 @@ export default definePlugin(() => {
   // });
 
   // Add an event listener to the "timer_event" event from the backend
-  {/* const listener = addEventListener<[
+  const listener = addEventListener<[
     test1: string,
     test2: boolean,
     test3: number
-  ]>("timer_event", (test1, test2, test3) => {
-    console.log("Template got timer_event with:", test1, test2, test3)
+  ]>("my_backend_function", (test1, test2, test3) => {
+    console.log("event:", test1, test2, test3)
     toaster.toast({
       title: "template got timer_event",
       body: `${test1}, ${test2}, ${test3}`
     });
-  });*/}
+  });
 
   return {
     // The name shown in various decky menus
