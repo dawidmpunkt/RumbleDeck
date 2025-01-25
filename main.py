@@ -7,17 +7,26 @@ import subprocess
 # and add the `decky-loader/plugin/imports` path to `python.analysis.extraPaths` in `.vscode/settings.json`
 import decky
 import asyncio
+import smbus
 
 #class SnifferPlugin(Plugin):
 class Plugin:
+bus = smbus.SMBus(0)
+DEVICE_ADDRESS = 0x5a
+command = [0x0C, 0x01]
+    
     async def my_backend_function(self, parameter_a, parameter_b):
         print(f"{parameter_a} {parameter_b}")
-        await decky.emit("my_backend_function", "Hello from the backend!", True, 2)
-        decky.logger.info("backend executed")
-        decky.logger.info(print(f"{parameter_a} {parameter_b}"))
-        decky.logger.info(f"{parameter_a}")
+        bus.write_i2c_block_data(DEVICE_ADDRESS, command[0], command[1:])
+        await decky.emit("my_backend_function", "command sent", True, 2)
+        #decky.logger.info("backend executed")
+        #decky.logger.info(print(f"{parameter_a} {parameter_b}"))
+        #decky.logger.info(f"{parameter_a}")
     sniffer_process = None
 
+    async def init_DRV2605(self):
+        bus.write_i2c_block_data(DEVICE_ADDRESS, command[0], command[1:])
+    
     async def on_activate(self):
         self.logger.info("USB Sniffer Plugin Activated")
 
