@@ -48,7 +48,7 @@ function Content() {
   
   return (
     <PanelSection title="Main Menu">
-      <PanelSectionRow>
+      {/*<PanelSectionRow>
         <ButtonItem
           layout="below"
           //onClick={() => startTimer()}
@@ -63,12 +63,12 @@ function Content() {
         >
           {"Test Rumble"}
         </ButtonItem>
-      </PanelSectionRow>
+      </PanelSectionRow>*/}
         <PanelSectionRow>
         <ButtonItem
           layout="below"
           //test button with standard function
-          onClick={serverAPI!.callPluginMethod("my_backend_function", { "parameter_a": "Hello", "parameter_b": "World" });}
+          onClick={() => serverAPI!.callPluginMethod("my_backend_function", { "parameter_a": "Hello", "parameter_b": "World" });}
           //onClick={startSniffer}
           disabled={isRunning}
           //onClick={() => startTimer()}
@@ -76,7 +76,7 @@ function Content() {
           {"Turn on RumbleDeck"}
         </ButtonItem>
       </PanelSectionRow>
-        <PanelSectionRow>
+      {/*<PanelSectionRow>
         <ButtonItem
           layout="below"
           onClick={stopSniffer}
@@ -85,7 +85,7 @@ function Content() {
         >
           {"Turn off RumbleDeck"}
         </ButtonItem>
-      </PanelSectionRow>
+      </PanelSectionRow>*/}
       {/* <PanelSectionRow>
         <ButtonItem
           layout="below"
