@@ -12,7 +12,7 @@ import asyncio
 class Plugin:
     async def my_backend_function(self, parameter_a, parameter_b):
         print(f"{parameter_a} {parameter_b}")
-
+        await decky.emit("timer_event", "Hello from the backend!", True, 2)
     sniffer_process = None
 
     async def on_activate(self):
