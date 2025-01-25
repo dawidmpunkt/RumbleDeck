@@ -15,7 +15,7 @@ import {
 import { useState } from "react";
 import { MdOutlineVibration } from "react-icons/md";
 
-const backend_function = callable<[parameter_a: number, parameter_b: number], number>('my_backend_function');
+const backend_function = callable<[parameter_a: number, parameter_b: number], number>("my_backend_function");
 //import logo from "../assets/logo.png";
 
 // This function calls the python function "add", which takes in two numbers and returns their sum (as a number)
