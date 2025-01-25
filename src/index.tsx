@@ -15,7 +15,7 @@ import {
 import { useState } from "react";
 import { MdOutlineVibration } from "react-icons/md";
 
-const backend_function = callable<[parameter_a: string, parameter_b: string], string>('my_backend_function');
+const backend_function = callable<[parameter_a: number, parameter_b: number], number>('my_backend_function');
 //import logo from "../assets/logo.png";
 
 // This function calls the python function "add", which takes in two numbers and returns their sum (as a number)
@@ -29,9 +29,9 @@ const backend_function = callable<[parameter_a: string, parameter_b: string], st
 //const startTimer = callable<[], void>("start_timer");
 
 function Content() {
-  const [result, setResult] = useState<string | undefined>();
+  const [result, setResult] = useState<number | undefined>();
   const onClick = async () => {
-    const result = await backend_function("Hello", "_World");
+    const result = await backend_function(5, 5);
     setResult(result);
   };
   
@@ -65,7 +65,7 @@ function Content() {
           //onClick={() => startTimer()}
         >
           {result ?? "Text be here"}          
-         // {"Turn on RumbleDeck"}
+        
         </ButtonItem>
       </PanelSectionRow>
     </PanelSection>
