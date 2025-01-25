@@ -48,22 +48,6 @@ function Content() {
   
   return (
     <PanelSection title="Main Menu">
-      {/*<PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          //onClick={() => startTimer()}
-        >
-          {"Initialize Driver"}
-        </ButtonItem>
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          //onClick={() => startTimer()}
-        >
-          {"Test Rumble"}
-        </ButtonItem>
-      </PanelSectionRow>*/}
         <PanelSectionRow>
         <ButtonItem
           layout="below"
@@ -76,50 +60,6 @@ function Content() {
           {"Turn on RumbleDeck"}
         </ButtonItem>
       </PanelSectionRow>
-      {/*<PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={stopSniffer}
-          disabled={!isRunning}
-          //onClick={() => startTimer()}
-        >
-          {"Turn off RumbleDeck"}
-        </ButtonItem>
-      </PanelSectionRow>*/}
-      {/* <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={onClick}
-        >
-          {result ?? "Add two numbers via Python"}
-        </ButtonItem>
-      </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => startTimer()}
-        >
-          {"Start Python timer"}
-        </ButtonItem>
-      </PanelSectionRow>*/}
-
-      {/* <PanelSectionRow>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <img src={logo} />
-        </div>
-      </PanelSectionRow>*/}
-
-      {/*<PanelSectionRow>
-        <ButtonItem
-          layout="below"
-          onClick={() => {
-            Navigation.Navigate("/decky-plugin-test");
-            Navigation.CloseSideMenus();
-          }}
-        >
-          Router
-        </ButtonItem>
-      </PanelSectionRow>*/}
     </PanelSection>
   );
 };
