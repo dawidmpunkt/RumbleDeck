@@ -83,7 +83,7 @@ export default definePlugin(() => {
   // Add an event listener to the "timer_event" event from the backend
   const listener = addEventListener<[
     test1: string,
-    test2: boolean,
+    test2: string,
     test3: number
   ]>("my_backend_function", (test1, test2, test3) => {
     console.log("event:", test1, test2, test3)
