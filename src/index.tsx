@@ -8,7 +8,7 @@ import {
 import {
  // addEventListener,
   //removeEventListener,
-//  callable,
+  callable,
   definePlugin,
   // routerHook
 } from "@decky/api"
@@ -35,7 +35,7 @@ function Content() {
     setResult(result);
   };*/
   const [isRunning, setIsRunning] = useState(false);
-
+  const backend_function = callable<[parameter_a: string, parameter_b: string], string>('my_backend_function');
   const startSniffer = async () => {
     await window.DCBackend.callBackend("start_sniffer", {});
     setIsRunning(true);
@@ -52,8 +52,8 @@ function Content() {
         <ButtonItem
           layout="below"
           //test button with standard function
-          onClick={() => serverAPI!.callPluginMethod("my_backend_function", { "parameter_a": "Hello", "parameter_b": "World" });}
-          //onClick={startSniffer}
+          onClick={await backend_function("Hello"," World")}
+            //onClick={startSniffer}
           disabled={isRunning}
           //onClick={() => startTimer()}
         >
