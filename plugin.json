@@ -1,7 +1,7 @@
 {
   "name": "RumbleDeck",
   "author": "Dawid Murawski",
-  "flags": ["debug", "_root"],
+  "flags": ["debug", "root"],
   "api_version": 1,
   "publish": {
     "tags": ["Rumble", "Haptic", "DRV2605"],
