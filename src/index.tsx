@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import { MdOutlineVibration } from "react-icons/md";
 
+const backend_function = callable<[parameter_a: string, parameter_b: string], string>('my_backend_function');
 //import logo from "../assets/logo.png";
 
 // This function calls the python function "add", which takes in two numbers and returns their sum (as a number)
@@ -28,6 +29,11 @@ import { MdOutlineVibration } from "react-icons/md";
 //const startTimer = callable<[], void>("start_timer");
 
 function Content() {
+  const onClick = async () => {
+    const result = await backend_function("Hello", "_World");
+    setResult(result);
+  };
+  
   /*const [result, setResult] = useState<number | undefined>();
 
   const onClick = async () => {
@@ -35,7 +41,7 @@ function Content() {
     setResult(result);
   };*/
   const [isRunning, setIsRunning] = useState(false);
-  const backend_function = callable<[parameter_a: string, parameter_b: string], string>('my_backend_function');
+
   const startSniffer = async () => {
     await window.DCBackend.callBackend("start_sniffer", {});
     setIsRunning(true);
@@ -52,7 +58,8 @@ function Content() {
         <ButtonItem
           layout="below"
           //test button with standard function
-          onClick={await backend_function("Hello"," World")}
+          onClick={onClick}
+          {result ?? "Text be here"}
             //onClick={startSniffer}
           disabled={isRunning}
           //onClick={() => startTimer()}
