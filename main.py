@@ -74,7 +74,7 @@ class Plugin:
             self.logger.info("Driver 1 active")
         """
     
-async def drv_toggle(self, drv_no):
+    async def drv_toggle(self, drv_no):
         pass
         #TODO
      
