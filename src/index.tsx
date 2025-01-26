@@ -72,7 +72,7 @@ function Content() {
         <ButtonItem
           layout="below"
           //test button with standard function
-          onClick={() => backend_function(5, 5)}
+          onClick={() => backend_function()}
             //onClick={startSniffer}
           //disabled={isRunning}
           //onClick={() => startTimer()}
