@@ -50,7 +50,7 @@ class Plugin:
             self.logger.info("Driver 1 active")
 
     # initialize driver
-    async def drv_init(self)
+    async def drv_init(self):
         bus.write_i2c_block_data(0x5a, 22, [126])
         bus.write_i2c_block_data(0x5a, 23, [150])
         bus.write_i2c_block_data(0x5a, 26, [54])
