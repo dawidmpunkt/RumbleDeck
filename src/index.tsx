@@ -18,7 +18,9 @@ import { MdOutlineVibration } from "react-icons/md";
 
 const backend_function = callable<[parameter_a: number, parameter_b: number], number>("my_backend_function");
 
-const init_DRV = callable<[both_active: boolean], boolean>("drv_startup");
+const init_DRV = callable<[], void>("drv_startup");
+
+//const init_DRV = callable<[both_active: boolean], boolean>("drv_startup");
 
 //import logo from "../assets/logo.png";
 
@@ -33,12 +35,12 @@ const init_DRV = callable<[both_active: boolean], boolean>("drv_startup");
 //const startTimer = callable<[], void>("start_timer");
 
 function Content() {
-  const [result, setResult] = useState<number | undefined>();
+  /*const [result, setResult] = useState<number | undefined>();
   const onClick = async () => {
     const result = await backend_function(5, 5);
     setResult(result);
-  };
-var no_DRV = false;
+  };*/
+//var no_DRV = false;
   
   /*const [result, setResult] = useState<number | undefined>();
 
@@ -60,9 +62,9 @@ var no_DRV = false;
     setIsRunning(false);
   };*/
 
-  const test_DRV = async () => {
+/*  const test_DRV = async () => {
     await test_DRV();
-  }
+  }*/
   
   return (
     <PanelSection title="Main Menu">
@@ -83,7 +85,7 @@ var no_DRV = false;
         <ButtonItem
           layout="below"
           //test button with standard function
-          onClick={() => init_DRV(no_DRV)}
+          onClick={() => init_DRV()}
             //onClick={startSniffer}
           //disabled={isRunning}
           //onClick={() => startTimer()}
