@@ -16,7 +16,7 @@ bus = smbus.SMBus(bus_no)
 # test motors
 def drv_test():
     for x in range(3):
-        smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
+        bus.write_i2c_block_data(0x5a, 12, [1])
         time.sleep(0.2)
 
 # initialize driver
@@ -52,32 +52,27 @@ class Plugin:
     
     #sniffer_process = None
     
-    async def drv_startup(self):
+    async def drv_startup(self, both_active=False):
         # switch to first Driver
         #self.logger.info("Switching to first driver")
-        drv_test()
         bus.write_i2c_block_data(0x70, 0, [1])
-        drv_test()
         drv_init()
-        drv_test()
         #self.logger.info("First driver initialized")
-        """
         if both_active == True:
         # switch to second Driver
-            self.logger.info("Switching to second driver")
+            #self.logger.info("Switching to second driver")
             bus.write_i2c_block_data(0x70, 0, [2])
             drv_init()
-            self.logger.info("Second driver initialized")
+            #self.logger.info("Second driver initialized")
             # Activate both Drivers
             bus.write_i2c_block_data(0x70, 0, [3])
             drv_test()
-            self.logger.info("Both drivers active")
+            #self.logger.info("Both drivers active")
         else:
             # Activate only Driver 1
             bus.write_i2c_block_data(0x70, 0, [1])
             drv_test()
-            self.logger.info("Driver 1 active")
-        """
+            #self.logger.info("Driver 1 active")
     
     async def drv_toggle(self, drv_no):
         pass
