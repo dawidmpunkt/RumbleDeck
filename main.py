@@ -56,7 +56,7 @@ class Plugin:
         bus.write_i2c_block_data(0x70, 0, [1])
         drv_init()
         self.logger.info("First driver initialized")
-      """
+"""
         if both_active == True:
         # switch to second Driver
             self.logger.info("Switching to second driver")
@@ -72,7 +72,7 @@ class Plugin:
             bus.write_i2c_block_data(0x70, 0, [1])
             drv_test()
             self.logger.info("Driver 1 active")
-    """
+"""
     
 async def drv_toggle(self, drv_no):
         pass
