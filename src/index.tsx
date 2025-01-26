@@ -38,6 +38,7 @@ function Content() {
     const result = await backend_function(5, 5);
     setResult(result);
   };
+var no_DRV = false;
   
   /*const [result, setResult] = useState<number | undefined>();
 
@@ -82,7 +83,7 @@ function Content() {
         <ButtonItem
           layout="below"
           //test button with standard function
-          onClick={() => init_DRV(0)}
+          onClick={() => init_DRV(no_DRV)}
             //onClick={startSniffer}
           //disabled={isRunning}
           //onClick={() => startTimer()}
