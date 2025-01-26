@@ -8,12 +8,12 @@ import subprocess
 import decky
 import asyncio
 import smbus
+import time
 
 def drv_test():
-    decky.logger.info("drv_test")
     for x in range(3):
         smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
-        asyncio.sleep(0.5)
+        time.sleep(500)
 
 #class SnifferPlugin(Plugin):
 class Plugin:
