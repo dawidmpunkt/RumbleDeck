@@ -58,6 +58,10 @@ function Content() {
     await window.DCBackend.callBackend("stop_sniffer", {});
     setIsRunning(false);
   };*/
+
+  const test_DRV = async () => {
+    await test_DRV();
+  }
   
   return (
     <PanelSection title="Main Menu">
