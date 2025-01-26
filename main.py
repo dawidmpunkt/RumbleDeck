@@ -52,11 +52,13 @@ class Plugin:
     
     async def drv_startup(self, both_active=False):
         # switch to first Driver
+        self.logger.info("Switching to first driver")
         bus.write_i2c_block_data(0x70, 0, [1])
         drv_init()
         self.logger.info("First driver initialized")
         if both_active == True:
         # switch to second Driver
+            self.logger.info("Switching to second driver")
             bus.write_i2c_block_data(0x70, 0, [2])
             drv_init()
             self.logger.info("Second driver initialized")
