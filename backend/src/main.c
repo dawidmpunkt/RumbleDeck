@@ -9,8 +9,8 @@
 
 #define USBMON_PATH "/sys/kernel/debug/usb/usbmon/3u"  // Path to USB monitor
 #define I2C_DEVICE "/dev/i2c-0"  // Path to I2C port (adjust as needed, e.g., /dev/i2c-1)
-#define I2C_ADDR 0x5a           // I2C device address
-#define PATTERN "eb090140"    // Pattern to search for
+#define I2C_ADDR 0x5a           // I2C device address of Driver(s)
+#define PATTERN "eb090140"    // Rumble-pattern to sniff USB-communication for
 
 void send_i2c_signal(int i2c_fd, unsigned char *data, size_t length) {
     if (write(i2c_fd, data, length) != length) {
