@@ -129,6 +129,7 @@ class Plugin:
 
     # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):
+        subprocess.run(["modprobe", "usbmon"])
         self.loop = asyncio.get_event_loop()
         logger.info("Hello World!")
 
