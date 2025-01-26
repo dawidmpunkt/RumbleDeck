@@ -18,7 +18,7 @@ import { MdOutlineVibration } from "react-icons/md";
 
 const backend_function = callable<[parameter_a: number, parameter_b: number], number>("my_backend_function");
 
-const init_DRV = callable<[both_active: boolean], boolean>("drv_init");
+const init_DRV = callable<[both_active: boolean], boolean>("drv_startup");
 
 //import logo from "../assets/logo.png";
 
