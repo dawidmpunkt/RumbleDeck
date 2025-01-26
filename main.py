@@ -62,8 +62,8 @@ class Plugin:
     
     async def drv_test(self):
         for x in range(3):
-        smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
-        await asyncio.sleep(0.5)
+            smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
+            await asyncio.sleep(0.5)
 
     async def drv_toggle(self, drv_no):
         #TODO
