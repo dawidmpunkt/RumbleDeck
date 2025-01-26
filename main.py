@@ -9,6 +9,20 @@ import decky
 import asyncio
 import smbus
 import time
+import logging
+from helpers import get_user
+
+USER = get_user()
+HOME_PATH = "/home/" + USER
+HOMEBREW_PATH = HOME_PATH + "/homebrew"
+
+logging.basicConfig(filename="/tmp/rumbledeck.log",
+                    format='[RumbleDeck] %(asctime)s %(levelname)s %(message)s',
+                    filemode='w+',
+                    force=True)
+logger=logging.getLogger()
+logger.setLevel(logging.INFO)
+
 
 bus_no = int(0)
 bus = smbus.SMBus(bus_no)
@@ -40,8 +54,8 @@ class Plugin:
         #decky.logger.info("trying to send I2C command")
         #bus.write_i2c_block_data(DEVICE_ADDRESS, cmd_test_rumble[0], cmd_test_rumble[1:])
         #smbus.SMBus(0).write_i2c_block_data(DEVICE_ADDRESS, 12, [1])
-        #self.logger.info("test")
-        drv_test()
+        #logger.info("test")
+        #drv_test()
         #smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
         #bustext = "testbus
         #await decky.emit("my_backend_function", bustext, 3, 2)
@@ -54,41 +68,40 @@ class Plugin:
     
     async def drv_startup(self, both_active=False):
         # switch to first Driver
-        #self.logger.info("Switching to first driver")
+        logger.info("Switching to first driver")
         bus.write_i2c_block_data(0x70, 0, [1])
         drv_init()
-        #self.logger.info("First driver initialized")
+        logger.info("First driver initialized")
         if both_active == True:
         # switch to second Driver
-            #self.logger.info("Switching to second driver")
+            logger.info("Switching to second driver")
             bus.write_i2c_block_data(0x70, 0, [2])
             drv_init()
-            #self.logger.info("Second driver initialized")
+            logger.info("Second driver initialized")
             # Activate both Drivers
             bus.write_i2c_block_data(0x70, 0, [3])
             drv_test()
-            #self.logger.info("Both drivers active")
+            logger.info("Both drivers active")
         else:
             # Activate only Driver 1
             bus.write_i2c_block_data(0x70, 0, [1])
             drv_test()
-            #self.logger.info("Driver 1 active")
+            logger.info("Driver 1 active")
     
     async def drv_toggle(self, drv_no):
         pass
         #TODO
      
-   
     async def on_activate(self):
-        self.logger.info("USB Sniffer Plugin Activated")
+        logger.info("USB Sniffer Plugin Activated")
 
     async def on_deactivate(self):
         self.stop_sniffer()
-        self.logger.info("USB Sniffer Plugin Deactivated")
+        logger.info("USB Sniffer Plugin Deactivated")
 
     def start_sniffer(self):
         if not self.sniffer_process:
-            self.logger.info("Starting USB Sniffer...")
+            logger.info("Starting USB Sniffer...")
             self.sniffer_process = subprocess.Popen(
                 [os.path.join(os.path.dirname(__file__), "usb_sniffer")],
                 stdout=subprocess.PIPE,
@@ -99,7 +112,7 @@ class Plugin:
 
     def stop_sniffer(self):
         if self.sniffer_process:
-            self.logger.info("Stopping USB Sniffer...")
+            logger.info("Stopping USB Sniffer...")
             self.sniffer_process.terminate()
             self.sniffer_process.wait()
             self.sniffer_process = None
@@ -110,30 +123,30 @@ class Plugin:
             try:
                 return self.sniffer_process.stdout.readline()
             except Exception as e:
-                self.logger.error(f"Error reading sniffer output: {e}")
+                logger.error(f"Error reading sniffer output: {e}")
                 return None
         return "Sniffer not running"
 
     # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):
         self.loop = asyncio.get_event_loop()
-        decky.logger.info("Hello World!")
+        logger.info("Hello World!")
 
     # Function called first during the unload process, utilize this to handle your plugin being stopped, but not
     # completely removed
     async def _unload(self):
-        decky.logger.info("Goodnight World!")
+        logger.info("Goodnight World!")
         pass
 
     # Function called after `_unload` during uninstall, utilize this to clean up processes and other remnants of your
     # plugin that may remain on the system
     async def _uninstall(self):
-        decky.logger.info("Goodbye World!")
+        logger.info("Goodbye World!")
         pass
 
     # Migrations that should be performed before entering `_main()`.
     async def _migration(self):
-        decky.logger.info("Migrating")
+        logger.info("Migrating")
         # Here's a migration example for logs:
         # - `~/.config/decky-template/template.log` will be migrated to `decky.decky_LOG_DIR/template.log`
         decky.migrate_logs(os.path.join(decky.DECKY_USER_HOME,
