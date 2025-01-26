@@ -62,7 +62,9 @@ class Plugin:
         bus.write_i2c_block_data(0x5a, 1, [0])
     
     async def drv_test(self):
+        decky.logger.info("drv_test")
         for x in range(3):
+            decky.logger.info("trying to loop")
             smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
             await asyncio.sleep(0.5)
 
