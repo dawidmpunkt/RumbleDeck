@@ -34,7 +34,7 @@ class Plugin:
     DEVICE_ADDRESS = int(0x5a)
     cmd_test_rumble = [0x0C, 0x01]
     
-    async def my_backend_function(self, parameter_a, parameter_b):
+    async def my_backend_function(self):
         #print(f"{parameter_a} {parameter_b}")
         #decky.logger.info("trying to send I2C command")
         #bus.write_i2c_block_data(DEVICE_ADDRESS, cmd_test_rumble[0], cmd_test_rumble[1:])
