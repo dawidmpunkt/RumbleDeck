@@ -106,7 +106,7 @@ export default definePlugin(() => {
   // });
 
   // Add an event listener to the "timer_event" event from the backend
-  const listener = addEventListener<[
+  /*const listener = addEventListener<[
     test1: string,
     test2: number,
     test3: number
@@ -116,7 +116,7 @@ export default definePlugin(() => {
       title: "Driver initialized",
       body: `${test1}, ${test2}, ${test3}`
     });
-  });
+  });*/
 
   return {
     // The name shown in various decky menus
@@ -130,7 +130,8 @@ export default definePlugin(() => {
     // The function triggered when your plugin unloads
     onDismount() {
       console.log("Unloading")
-      removeEventListener("my_backend_function", listener);
+    //  removeEventListener("my_backend_function", listener);
+      //removeEventListener("drv_startup", listener);
       // serverApi.routerHook.removeRoute("/decky-plugin-test");
     },
   };
