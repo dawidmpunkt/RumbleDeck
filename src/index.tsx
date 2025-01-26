@@ -18,7 +18,7 @@ import { MdOutlineVibration } from "react-icons/md";
 
 const backend_function = callable<[parameter_a: number, parameter_b: number], number>("my_backend_function");
 
-const test_DRV = callable<[], void>("drv_test");
+const init_DRV = callable<[both_active: boolean], boolean>("drv_init");
 
 //import logo from "../assets/logo.png";
 
@@ -69,12 +69,12 @@ function Content() {
         <ButtonItem
           layout="below"
           //test button with standard function
-          onClick={onClick}
+          onClick={() => backend_function(5, 5)}
             //onClick={startSniffer}
           //disabled={isRunning}
           //onClick={() => startTimer()}
         >
-          {result ?? "Text be here"}          
+          {"Test Motors"}          
         
         </ButtonItem>
       </PanelSectionRow>
@@ -82,12 +82,12 @@ function Content() {
         <ButtonItem
           layout="below"
           //test button with standard function
-          onClick={test_DRV}
+          onClick={() => init_DRV(False)}
             //onClick={startSniffer}
           //disabled={isRunning}
           //onClick={() => startTimer()}
         >
-          {"Test Motors"}          
+          {"Initialize Drivers"}          
         
         </ButtonItem>
       </PanelSectionRow>
