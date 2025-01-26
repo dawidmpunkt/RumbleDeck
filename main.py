@@ -54,7 +54,7 @@ class Plugin:
         # switch to first Driver
         self.logger.info("Switching to first driver")
         bus.write_i2c_block_data(0x70, 0, [1])
-        drv_init()
+        drv_test()
         self.logger.info("First driver initialized")
         """
         if both_active == True:
