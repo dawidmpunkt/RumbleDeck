@@ -9,6 +9,12 @@ import decky
 import asyncio
 import smbus
 
+    def drv_test():
+        decky.logger.info("drv_test")
+        for x in range(3):
+            smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
+            await asyncio.sleep(0.5)
+
 #class SnifferPlugin(Plugin):
 class Plugin:
     bus_no = int(0)
@@ -61,12 +67,12 @@ class Plugin:
         bus.write_i2c_block_data(0x5a, 3, [1])
         bus.write_i2c_block_data(0x5a, 1, [0])
     
-    async def drv_test(self):
-        decky.logger.info("drv_test")
-        for x in range(3):
-            decky.logger.info("trying to loop")
-            smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
-            await asyncio.sleep(0.5)
+    #async def drv_test(self):
+     #   decky.logger.info("drv_test")
+      #  for x in range(3):
+       #     decky.logger.info("trying to loop")
+        #    smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
+         #   await asyncio.sleep(0.5)
 
     async def drv_toggle(self, drv_no):
         pass
