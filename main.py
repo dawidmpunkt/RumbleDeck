@@ -54,6 +54,7 @@ class Plugin:
     async def drv_startup(self):
         # switch to first Driver
         #self.logger.info("Switching to first driver")
+        drv_test()
         bus.write_i2c_block_data(0x70, 0, [1])
         drv_test()
         drv_init()
