@@ -50,7 +50,7 @@ class Plugin:
     
     #sniffer_process = None
     
-    async def drv_startup(self, both_active=False):
+    async def drv_startup(self):
         # switch to first Driver
         self.logger.info("Switching to first driver")
         bus.write_i2c_block_data(0x70, 0, [1])
