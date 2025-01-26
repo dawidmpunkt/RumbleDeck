@@ -14,7 +14,7 @@ from helpers import get_user
 
 USER = get_user()
 HOME_PATH = "/home/" + USER
-HOMEBREW_PATH = HOME_PATH + "/homebrew"
+PLUGIN_PATH = HOME_PATH + "/homebrew/RumbleDeck"
 
 logging.basicConfig(filename="/tmp/rumbledeck.log",
                     format='[RumbleDeck] %(asctime)s %(levelname)s %(message)s',
@@ -46,26 +46,13 @@ def drv_init():
 
 #class SnifferPlugin(Plugin):
 class Plugin:
+    sniffer_process = None
     DEVICE_ADDRESS = int(0x5a)
     cmd_test_rumble = [0x0C, 0x01]
     
     async def my_backend_function(self):
-        #print(f"{parameter_a} {parameter_b}")
-        #decky.logger.info("trying to send I2C command")
-        #bus.write_i2c_block_data(DEVICE_ADDRESS, cmd_test_rumble[0], cmd_test_rumble[1:])
-        #smbus.SMBus(0).write_i2c_block_data(DEVICE_ADDRESS, 12, [1])
-        #logger.info("test")
         drv_test()
-        #smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
-        #bustext = "testbus
-        #await decky.emit("my_backend_function", bustext, 3, 2)
-        #await decky.emit("my_backend_function", "test", "test2", 2)
-        #decky.logger.info("backend executed")
-        #decky.logger.info(print(f"{parameter_a} {parameter_b}"))
-        #decky.logger.info(f"{parameter_a}")
-    
-    #sniffer_process = None
-    
+
     async def drv_startup(self, both_active=False):
         # switch to first Driver
         logger.info("Switching to first driver")
@@ -98,7 +85,7 @@ class Plugin:
     async def on_deactivate(self):
         self.stop_sniffer()
         logger.info("USB Sniffer Plugin Deactivated")
-
+ 
     def start_sniffer(self):
         if not self.sniffer_process:
             logger.info("Starting USB Sniffer...")
@@ -132,11 +119,14 @@ class Plugin:
         subprocess.run(["modprobe", "usbmon"])
         self.loop = asyncio.get_event_loop()
         logger.info("Hello World!")
+        self.sniffer-process = subprocess.Popen([PLUGIN_PATH + "/bin/backend/out/rumble-sniffer"],)
 
     # Function called first during the unload process, utilize this to handle your plugin being stopped, but not
     # completely removed
     async def _unload(self):
         logger.info("Goodnight World!")
+        self.sniffer_process.terminate()
+        self.sniffer_process = None
         pass
 
     # Function called after `_unload` during uninstall, utilize this to clean up processes and other remnants of your
