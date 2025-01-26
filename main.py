@@ -39,6 +39,7 @@ class Plugin:
         #decky.logger.info("trying to send I2C command")
         #bus.write_i2c_block_data(DEVICE_ADDRESS, cmd_test_rumble[0], cmd_test_rumble[1:])
         #smbus.SMBus(0).write_i2c_block_data(DEVICE_ADDRESS, 12, [1])
+        self.logger.info("test")
         drv_test()
         #smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
         #bustext = "testbus
@@ -53,10 +54,10 @@ class Plugin:
     async def drv_startup(self):
         # switch to first Driver
         self.logger.info("Switching to first driver")
-        bus.write_i2c_block_data(0x70, 0, [1])
-        drv_test()
+        #bus.write_i2c_block_data(0x70, 0, [1])
+        #drv_test()
         #drv_init()
-        self.logger.info("First driver initialized")
+        #self.logger.info("First driver initialized")
         """
         if both_active == True:
         # switch to second Driver
