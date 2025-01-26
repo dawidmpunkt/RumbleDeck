@@ -10,9 +10,8 @@ import asyncio
 import smbus
 import time
 
-def drv_test():
+def drv_test2():
     for x in range(3):
-        decky.logger.info("running loop")
         smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
         time.sleep(0.2)
 
@@ -38,6 +37,11 @@ class Plugin:
         #decky.logger.info(f"{parameter_a}")
     sniffer_process = None
 
+    async def drv_test(self):
+        for x in range(3):
+            smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
+            time.sleep(0.2)
+    
     async def drv_startup(self, both_active=False):
         # switch to first Driver
         bus.write_i2c_block_data(0x70, 0, [1])
