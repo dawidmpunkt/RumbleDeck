@@ -43,7 +43,7 @@ class Plugin:
             # Activate both Drivers
             bus.write_i2c_block_data(0x70, 0, [3])
             self.logger.info("Both drivers active")
-        else 
+        else:
             # Activate only Driver 1
             bus.write_i2c_block_data(0x70, 0, [1])
             drv_test()
