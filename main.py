@@ -10,6 +10,9 @@ import asyncio
 import smbus
 import time
 
+bus_no = int(0)
+bus = smbus.SMBus(bus_no)
+
 # test motors
 def drv_test():
     for x in range(3):
@@ -29,8 +32,6 @@ def drv_init():
 
 #class SnifferPlugin(Plugin):
 class Plugin:
-    bus_no = int(0)
-    bus = smbus.SMBus(bus_no)
     DEVICE_ADDRESS = int(0x5a)
     cmd_test_rumble = [0x0C, 0x01]
     
