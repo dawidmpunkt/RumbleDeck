@@ -82,7 +82,7 @@ function Content() {
         <ButtonItem
           layout="below"
           //test button with standard function
-          onClick={() => init_DRV(False)}
+          onClick={() => init_DRV()}
             //onClick={startSniffer}
           //disabled={isRunning}
           //onClick={() => startTimer()}
