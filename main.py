@@ -11,6 +11,7 @@ import smbus
 import time
 
 def drv_test():
+    x=1
     for x in range(3):
         decky.logger.info("running loop")
         smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
