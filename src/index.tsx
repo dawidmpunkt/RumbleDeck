@@ -17,6 +17,9 @@ import { useState } from "react";
 import { MdOutlineVibration } from "react-icons/md";
 
 const backend_function = callable<[parameter_a: number, parameter_b: number], number>("my_backend_function");
+
+const test_DRV = callable<[], void>("test_DRV");
+
 //import logo from "../assets/logo.png";
 
 // This function calls the python function "add", which takes in two numbers and returns their sum (as a number)
@@ -42,6 +45,8 @@ function Content() {
     const result = await add(Math.random(), Math.random());
     setResult(result);
   };*/
+
+  /* # Rumblesniffer code
   const [isRunning, setIsRunning] = useState(false);
 
   const startSniffer = async () => {
@@ -52,7 +57,7 @@ function Content() {
   const stopSniffer = async () => {
     await window.DCBackend.callBackend("stop_sniffer", {});
     setIsRunning(false);
-  };
+  };*/
   
   return (
     <PanelSection title="Main Menu">
@@ -62,10 +67,23 @@ function Content() {
           //test button with standard function
           onClick={onClick}
             //onClick={startSniffer}
-          disabled={isRunning}
+          //disabled={isRunning}
           //onClick={() => startTimer()}
         >
           {result ?? "Text be here"}          
+        
+        </ButtonItem>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          //test button with standard function
+          onClick={test_DRV}
+            //onClick={startSniffer}
+          //disabled={isRunning}
+          //onClick={() => startTimer()}
+        >
+          {"Test Motors"}          
         
         </ButtonItem>
       </PanelSectionRow>
