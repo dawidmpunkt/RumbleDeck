@@ -10,10 +10,22 @@ import asyncio
 import smbus
 import time
 
-def drv_test2():
+# test motors
+def drv_test():
     for x in range(3):
         smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
         time.sleep(0.2)
+
+# initialize driver
+def drv_init():
+    bus.write_i2c_block_data(0x5a, 22, [126])
+    bus.write_i2c_block_data(0x5a, 23, [150])
+    bus.write_i2c_block_data(0x5a, 26, [54])
+    bus.write_i2c_block_data(0x5a, 27, [147])
+    bus.write_i2c_block_data(0x5a, 28, [245])
+    bus.write_i2c_block_data(0x5a, 29, [168])
+    bus.write_i2c_block_data(0x5a, 3, [1])
+    bus.write_i2c_block_data(0x5a, 1, [0])
 
 #class SnifferPlugin(Plugin):
 class Plugin:
@@ -23,8 +35,8 @@ class Plugin:
     cmd_test_rumble = [0x0C, 0x01]
     
     async def my_backend_function(self, parameter_a, parameter_b):
-        print(f"{parameter_a} {parameter_b}")
-        decky.logger.info("trying to send I2C command")
+        #print(f"{parameter_a} {parameter_b}")
+        #decky.logger.info("trying to send I2C command")
         #bus.write_i2c_block_data(DEVICE_ADDRESS, cmd_test_rumble[0], cmd_test_rumble[1:])
         #smbus.SMBus(0).write_i2c_block_data(DEVICE_ADDRESS, 12, [1])
         drv_test()
@@ -32,15 +44,11 @@ class Plugin:
         #bustext = "testbus
         #await decky.emit("my_backend_function", bustext, 3, 2)
         #await decky.emit("my_backend_function", "test", "test2", 2)
-        decky.logger.info("backend executed")
+        #decky.logger.info("backend executed")
         #decky.logger.info(print(f"{parameter_a} {parameter_b}"))
         #decky.logger.info(f"{parameter_a}")
-    sniffer_process = None
-
-    async def drv_test(self):
-        for x in range(3):
-            smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
-            time.sleep(0.2)
+    
+    #sniffer_process = None
     
     async def drv_startup(self, both_active=False):
         # switch to first Driver
@@ -60,30 +68,12 @@ class Plugin:
             bus.write_i2c_block_data(0x70, 0, [1])
             drv_test()
             self.logger.info("Driver 1 active")
-
-    # initialize driver
-    async def drv_init(self):
-        bus.write_i2c_block_data(0x5a, 22, [126])
-        bus.write_i2c_block_data(0x5a, 23, [150])
-        bus.write_i2c_block_data(0x5a, 26, [54])
-        bus.write_i2c_block_data(0x5a, 27, [147])
-        bus.write_i2c_block_data(0x5a, 28, [245])
-        bus.write_i2c_block_data(0x5a, 29, [168])
-        bus.write_i2c_block_data(0x5a, 3, [1])
-        bus.write_i2c_block_data(0x5a, 1, [0])
     
-    #async def drv_test(self):
-     #   decky.logger.info("drv_test")
-      #  for x in range(3):
-       #     decky.logger.info("trying to loop")
-        #    smbus.SMBus(0).write_i2c_block_data(0x5a, 12, [1])
-         #   await asyncio.sleep(0.5)
-
     async def drv_toggle(self, drv_no):
         pass
         #TODO
-       
-    
+     
+   
     async def on_activate(self):
         self.logger.info("USB Sniffer Plugin Activated")
 
