@@ -10,6 +10,7 @@ Triggering the rumble signal on both drivers simultaneously works.
 
 # current issues
 * backend (/backend/out/rumble-sniffer) does not compile automatically. I do not understand why, yet.
+ -> run 'make' in the backend folder manually to compile the sniffer for now.
 
 # License
 This project is licensed under the terms of the BSD 3-Clause License. You can read the full
