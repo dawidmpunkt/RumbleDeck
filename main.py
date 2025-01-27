@@ -97,7 +97,7 @@ class Plugin:
                 stderr=subprocess.PIPE,
                 text=True
             )
-            self.logger.info("USB Sniffer started")
+            logger.info("USB Sniffer started")
 
     def stop_sniffer(self):
         if self.sniffer_process:
@@ -105,7 +105,7 @@ class Plugin:
             self.sniffer_process.terminate()
             self.sniffer_process.wait()
             self.sniffer_process = None
-            self.logger.info("USB Sniffer stopped")
+            logger.info("USB Sniffer stopped")
 
     def get_logs(self):
         if self.sniffer_process:
