@@ -90,7 +90,7 @@ class Plugin:
     def start_sniffer(self):
         if not self.sniffer_process:
             logger.info("Starting USB Sniffer...")
-            self.sniffer_process = subprocess.Popen([PLUGIN_PATH + "/bin/backend/out/rumble-sniffer"],
+            self.sniffer_process = subprocess.Popen([PLUGIN_PATH + "/backend/out/rumble-sniffer"],
             #self.sniffer_process = subprocess.Popen(
                 #[os.path.join(os.path.dirname(__file__), "usb_sniffer")],
                 stdout=subprocess.PIPE,
