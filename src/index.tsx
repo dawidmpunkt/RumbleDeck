@@ -19,6 +19,8 @@ import { MdOutlineVibration } from "react-icons/md";
 const backend_function = callable<[], void>("my_backend_function");
 
 const init_DRV = callable<[], void>("drv_startup");
+const stop_sniffer = callable<[], void>("start_sniffer");
+const start_sniffer = callable<[], void>("stop_sniffer");
 
 //const init_DRV = callable<[both_active: boolean], boolean>("drv_startup");
 
@@ -92,6 +94,23 @@ function Content() {
         >
           {"Initialize Drivers"}          
         
+        </ButtonItem>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          onClick={() => start_sniffer()}
+          >
+          {"Start Sniffer"}          
+        </ButtonItem>
+      </PanelSectionRow>
+      
+      <PanelSectionRow>
+        <ButtonItem
+          layout="below"
+          onClick={() => stop_sniffer()}
+          >
+          {"Stop Sniffer"}          
         </ButtonItem>
       </PanelSectionRow>
     </PanelSection>
