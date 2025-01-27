@@ -121,14 +121,15 @@ class Plugin:
         subprocess.run(["modprobe", "usbmon"])
         self.loop = asyncio.get_event_loop()
         logger.info("Hello World!")
-        self.start_sniffer()
+        #self.start_sniffer()
 
     # Function called first during the unload process, utilize this to handle your plugin being stopped, but not
     # completely removed
     async def _unload(self):
         logger.info("Goodnight World!")
-        self.sniffer_process.terminate()
-        self.sniffer_process = None
+        self.stop_sniffer()
+        #self.sniffer_process.terminate()
+        #self.sniffer_process = None
         pass
 
     # Function called after `_unload` during uninstall, utilize this to clean up processes and other remnants of your
