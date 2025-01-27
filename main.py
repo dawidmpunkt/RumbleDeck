@@ -14,7 +14,7 @@ from helpers import get_user
 
 USER = get_user()
 HOME_PATH = "/home/" + USER
-PLUGIN_PATH = HOME_PATH + "/homebrew/RumbleDeck"
+PLUGIN_PATH = HOME_PATH + "/homebrew/plugins/RumbleDeck"
 
 logging.basicConfig(filename="/tmp/rumbledeck.log",
                     format='[RumbleDeck] %(asctime)s %(levelname)s %(message)s',
