@@ -80,6 +80,7 @@ class Plugin:
         #TODO
      
     async def on_activate(self):
+        self.start_sniffer()
         logger.info("USB Sniffer Plugin Activated")
 
     async def on_deactivate(self):
@@ -89,8 +90,9 @@ class Plugin:
     def start_sniffer(self):
         if not self.sniffer_process:
             logger.info("Starting USB Sniffer...")
-            self.sniffer_process = subprocess.Popen(
-                [os.path.join(os.path.dirname(__file__), "usb_sniffer")],
+            self.sniffer_process = subprocess.Popen([PLUGIN_PATH + "/bin/backend/out/rumble-sniffer"],
+            #self.sniffer_process = subprocess.Popen(
+                #[os.path.join(os.path.dirname(__file__), "usb_sniffer")],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True
@@ -119,7 +121,7 @@ class Plugin:
         subprocess.run(["modprobe", "usbmon"])
         self.loop = asyncio.get_event_loop()
         logger.info("Hello World!")
-        self.sniffer-process = subprocess.Popen([PLUGIN_PATH + "/bin/backend/out/rumble-sniffer"],)
+        self.start_sniffer()
 
     # Function called first during the unload process, utilize this to handle your plugin being stopped, but not
     # completely removed
