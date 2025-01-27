@@ -19,8 +19,8 @@ import { MdOutlineVibration } from "react-icons/md";
 const backend_function = callable<[], void>("my_backend_function");
 
 const init_DRV = callable<[], void>("drv_startup");
-const stop_sniffer = callable<[], void>("start_sniffer");
-const start_sniffer = callable<[], void>("stop_sniffer");
+const start_sniffer = callable<[], void>("start_sniffer");
+const stop_sniffer = callable<[], void>("stop_sniffer");
 
 //const init_DRV = callable<[both_active: boolean], boolean>("drv_startup");
 
