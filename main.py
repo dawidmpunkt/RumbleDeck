@@ -1,159 +1,192 @@
+# main.py — RumbleDeck backend (no smbus required)
 import os
-import subprocess
-#from decky_plugin import Plugin
-
-# The decky plugin module is located at decky-loader/plugin
-# For easy intellisense checkout the decky-loader code repo
-# and add the `decky-loader/plugin/imports` path to `python.analysis.extraPaths` in `.vscode/settings.json`
-import decky
+import os.path
+import fcntl
 import asyncio
-import smbus
+import subprocess
 import time
-import logging
-from helpers import get_user
+from pathlib import Path
 
-USER = get_user()
-HOME_PATH = "/home/" + USER
-PLUGIN_PATH = HOME_PATH + "/homebrew/plugins/RumbleDeck"
+from decky import logger  # Decky-provided logger
 
-logging.basicConfig(filename="/tmp/rumbledeck.log",
-                    format='[RumbleDeck] %(asctime)s %(levelname)s %(message)s',
-                    filemode='w+',
-                    force=True)
-logger=logging.getLogger()
-logger.setLevel(logging.INFO)
+# ---------- Config ----------
+# Select I²C bus via env var (default 1 is typical on Steam Deck)
+I2C_BUS = int(os.getenv("RUMBLEDECK_I2C_BUS", "1"))
+
+# Device addresses
+DRV_ADDR = 0x5A  # DRV2605
+MUX_ADDR = 0x70  # e.g., TCA9548A / similar
+
+# Paths
+ROOT = Path(__file__).resolve().parent
+SNIFFER = ROOT / "backend" / "out" / "rumble-sniffer"
+
+# ioctl constants
+I2C_SLAVE = 0x0703
 
 
-bus_no = int(0)
-bus = smbus.SMBus(bus_no)
+# ---------- Low-level I²C helpers (no smbus) ----------
+class RawI2C:
+    """
+    Minimal /dev/i2c-* writer. Re-opens per use (simple & robust).
+    Supports "register + bytes" write (what your code needs).
+    """
+    def __init__(self, bus: int):
+        self.bus = bus
+        self.fd = None
 
-# test motors
+    def __enter__(self):
+        self.fd = os.open(f"/dev/i2c-{self.bus}", os.O_RDWR)
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        try:
+            if self.fd is not None:
+                os.close(self.fd)
+        finally:
+            self.fd = None
+
+    def _set_addr(self, addr: int):
+        if self.fd is None:
+            raise RuntimeError("I2C device not opened")
+        fcntl.ioctl(self.fd, I2C_SLAVE, addr)
+
+    def write_reg(self, addr: int, reg: int, data):
+        """
+        Write: [reg][data...]
+        data can be int or bytes/bytearray/list-of-ints.
+        """
+        if isinstance(data, int):
+            payload = bytes([reg, data & 0xFF])
+        elif isinstance(data, (bytes, bytearray)):
+            payload = bytes([reg]) + bytes(data)
+        elif isinstance(data, list):
+            payload = bytes([reg]) + bytes([x & 0xFF for x in data])
+        else:
+            raise TypeError(f"Unsupported data type for I2C write: {type(data)}")
+
+        self._set_addr(addr)
+        os.write(self.fd, payload)
+
+
+def i2c_write(addr: int, reg: int, data):
+    """Convenience wrapper: open, write, close."""
+    with RawI2C(I2C_BUS) as i2c:
+        i2c.write_reg(addr, reg, data)
+
+
+# ---------- Device-specific actions ----------
 def drv_test():
-    for x in range(3):
-        bus.write_i2c_block_data(0x5a, 12, [1])
+    """Simple test: trigger rumble 3×."""
+    for _ in range(3):
+        i2c_write(DRV_ADDR, 0x0C, 0x01)  # GO = 1
         time.sleep(0.2)
 
-# initialize driver
-def drv_init():
-    bus.write_i2c_block_data(0x5a, 22, [126])
-    bus.write_i2c_block_data(0x5a, 23, [150])
-    bus.write_i2c_block_data(0x5a, 26, [54])
-    bus.write_i2c_block_data(0x5a, 27, [147])
-    bus.write_i2c_block_data(0x5a, 28, [245])
-    bus.write_i2c_block_data(0x5a, 29, [168])
-    bus.write_i2c_block_data(0x5a, 3, [1])
-    bus.write_i2c_block_data(0x5a, 1, [0])
 
-#class SnifferPlugin(Plugin):
+def drv_init():
+    """Initialize DRV2605 with your register sequence."""
+    i2c_write(DRV_ADDR, 22, 126)
+    i2c_write(DRV_ADDR, 23, 150)
+    i2c_write(DRV_ADDR, 26, 54)
+    i2c_write(DRV_ADDR, 27, 147)
+    i2c_write(DRV_ADDR, 28, 245)
+    i2c_write(DRV_ADDR, 29, 168)
+    i2c_write(DRV_ADDR, 3,  1)
+    i2c_write(DRV_ADDR, 1,  0)
+
+
+def mux_select(mask: int):
+    """Write channel mask to I²C mux control register (0x00)."""
+    i2c_write(MUX_ADDR, 0x00, mask & 0xFF)
+
+
+# ---------- Decky plugin ----------
 class Plugin:
     sniffer_process = None
-    DEVICE_ADDRESS = int(0x5a)
-    cmd_test_rumble = [0x0C, 0x01]
-    
-    async def my_backend_function(self):
+
+    # ----- callable backend methods (async) -----
+
+    async def my_backend_function(self) -> None:
+        logger.info("my_backend_function called")
         drv_test()
 
-    async def drv_startup(self, both_active=False):
-        # switch to first Driver
-        logger.info("Switching to first driver")
-        bus.write_i2c_block_data(0x70, 0, [1])
+    async def drv_startup(self, both_active: bool = False) -> None:
+        logger.info(f"drv_startup(both_active={both_active})")
+
+        # Select driver 1
+        mux_select(0x01)
         drv_init()
-        logger.info("First driver initialized")
-        if both_active == True:
-        # switch to second Driver
-            logger.info("Switching to second driver")
-            bus.write_i2c_block_data(0x70, 0, [2])
+        logger.info("Driver 1 initialized")
+
+        if both_active:
+            # Select driver 2
+            mux_select(0x02)
             drv_init()
-            logger.info("Second driver initialized")
-            # Activate both Drivers
-            bus.write_i2c_block_data(0x70, 0, [3])
+            logger.info("Driver 2 initialized")
+
+            # Enable both
+            mux_select(0x03)
             drv_test()
             logger.info("Both drivers active")
         else:
-            # Activate only Driver 1
-            bus.write_i2c_block_data(0x70, 0, [1])
+            # Keep only driver 1
+            mux_select(0x01)
             drv_test()
             logger.info("Driver 1 active")
-    
-    async def drv_toggle(self, drv_no):
-        pass
-        #TODO
-     
-    async def on_activate(self):
-        self.start_sniffer()
-        logger.info("USB Sniffer Plugin Activated")
 
-    async def on_deactivate(self):
-        self.stop_sniffer()
-        logger.info("USB Sniffer Plugin Deactivated")
- 
-    def start_sniffer(self):
+    async def start_sniffer(self) -> None:
+        if self.sniffer_process:
+            logger.info("Sniffer already running")
+            return
+        if not SNIFFER.exists():
+            logger.error(f"Sniffer binary missing: {SNIFFER}")
+            return
+
+        logger.info(f"Starting sniffer: {SNIFFER}")
+        self.sniffer_process = subprocess.Popen(
+            [str(SNIFFER)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+    async def stop_sniffer(self) -> None:
         if not self.sniffer_process:
-            logger.info("Starting USB Sniffer...")
-            self.sniffer_process = subprocess.Popen([PLUGIN_PATH + "/backend/out/rumble-sniffer"],
-            #self.sniffer_process = subprocess.Popen(
-                #[os.path.join(os.path.dirname(__file__), "usb_sniffer")],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
-            logger.info("USB Sniffer started")
+            logger.info("Sniffer not running")
+            return
 
-    def stop_sniffer(self):
-        if self.sniffer_process:
-            logger.info("Stopping USB Sniffer...")
-            self.sniffer_process.terminate()
-            self.sniffer_process.wait()
+        logger.info("Stopping sniffer…")
+        self.sniffer_process.terminate()
+        try:
+            self.sniffer_process.wait(timeout=3)
+        except Exception:
+            self.sniffer_process.kill()
+        finally:
             self.sniffer_process = None
-            logger.info("USB Sniffer stopped")
+            logger.info("Sniffer stopped")
 
-    def get_logs(self):
-        if self.sniffer_process:
-            try:
-                return self.sniffer_process.stdout.readline()
-            except Exception as e:
-                logger.error(f"Error reading sniffer output: {e}")
-                return None
-        return "Sniffer not running"
+    # ----- lifecycle -----
 
-    # Asyncio-compatible long-running code, executed in a task when the plugin is loaded
     async def _main(self):
-        subprocess.run(["modprobe", "usbmon"])
-        self.loop = asyncio.get_event_loop()
-        logger.info("Hello World!")
-        #self.start_sniffer()
+        # Ensure required kernel modules for your features
+        for mod in ("i2c-dev", "usbmon"):
+            try:
+                subprocess.run(["modprobe", mod], check=False)
+            except Exception as e:
+                logger.warning(f"modprobe {mod} failed: {e}")
 
-    # Function called first during the unload process, utilize this to handle your plugin being stopped, but not
-    # completely removed
+        # Sanity log
+        logger.info(f"RumbleDeck backend started (I2C bus={I2C_BUS})")
+        # Optionally start sniffer here:
+        # await self.start_sniffer()
+
     async def _unload(self):
-        logger.info("Goodnight World!")
-        self.stop_sniffer()
-        #self.sniffer_process.terminate()
-        #self.sniffer_process = None
-        pass
+        await self.stop_sniffer()
+        logger.info("RumbleDeck backend unloading")
 
-    # Function called after `_unload` during uninstall, utilize this to clean up processes and other remnants of your
-    # plugin that may remain on the system
     async def _uninstall(self):
-        logger.info("Goodbye World!")
-        pass
+        logger.info("RumbleDeck backend uninstall")
 
-    # Migrations that should be performed before entering `_main()`.
     async def _migration(self):
-        logger.info("Migrating")
-        # Here's a migration example for logs:
-        # - `~/.config/decky-template/template.log` will be migrated to `decky.decky_LOG_DIR/template.log`
-        decky.migrate_logs(os.path.join(decky.DECKY_USER_HOME,
-                                               ".config", "decky-template", "template.log"))
-        # Here's a migration example for settings:
-        # - `~/homebrew/settings/template.json` is migrated to `decky.decky_SETTINGS_DIR/template.json`
-        # - `~/.config/decky-template/` all files and directories under this root are migrated to `decky.decky_SETTINGS_DIR/`
-        decky.migrate_settings(
-            os.path.join(decky.DECKY_HOME, "settings", "template.json"),
-            os.path.join(decky.DECKY_USER_HOME, ".config", "decky-template"))
-        # Here's a migration example for runtime data:
-        # - `~/homebrew/template/` all files and directories under this root are migrated to `decky.decky_RUNTIME_DIR/`
-        # - `~/.local/share/decky-template/` all files and directories under this root are migrated to `decky.decky_RUNTIME_DIR/`
-        decky.migrate_runtime(
-            os.path.join(decky.DECKY_HOME, "template"),
-            os.path.join(decky.DECKY_USER_HOME, ".local", "share", "decky-template"))
+        # No migrations; keep for compatibility
+        logger.info("RumbleDeck backend migration (noop)")
