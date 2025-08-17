@@ -5,6 +5,15 @@ For the mod see: [Rumble Mod](https://github.com/dawidmpunkt/rumble-for-steamdec
 The plugin supports two DRV2605 Drivers via a I2C multiplexer as of now.
 Triggering the rumble signal on both drivers simultaneously works.
 
+You will need to install wireshark:
+got to console:
+sudo steamos-readonly disable
+sudo pacman-key --init
+sudo pacman-key --populate holo
+sudo pacman -S wireshark-cli
+sudo gpasswd -a $USER wireshark
+sudo steamos-readonly enable
+
 # TODO
 - Add option to add custom settings for drivers
 
