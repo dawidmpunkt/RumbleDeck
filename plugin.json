@@ -1,11 +1,17 @@
 {
   "name": "RumbleDeck",
-  "author": "Dawid Murawski",
+  "author": "Dawid Brüning (né Murawski)",
   "flags": ["debug", "root"],
   "api_version": 1,
   "publish": {
     "tags": ["Rumble", "Haptic", "DRV2605"],
     "description": "Decky Plugin to control the Steam Deck Rumble Mod via I2C.",
-    "image": "https://raw.githubusercontent.com/dawidmpunkt/RumbleDeck/main/assets/logo.png"
+    "image": "https://raw.githubusercontent.com/dawidmpunkt/RumbleDeck/main/assets/logo.png",
+  "version": "0.0.2",
+  "display_name": "RumbleDeck",
+  "description": "DRV2605-based rumble control for Steam Deck",
+  "dependencies": [],
+  "main": "index.js",
+  "target": "GamepadUI"
   }
 }
