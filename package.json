@@ -1,53 +1,25 @@
-{
+  {
   "name": "RumbleDeck",
-  "version": "0.0.1",
+  "version": 0.0.2",
   "description": "A plugin to setup the DRV2605-based rumble mod via I2C. It also sniffs USB communcation for Rumble signals and sends triggers via I2C.",
+  "private": true,
   "type": "module",
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dawidmpunkt/RumbleDeck.git"
-  },
-  "keywords": [
-    "decky",
-    "plugin",
-    "rumble",
-    "haptic",
-    "i2c",
-    "DRV2605",
-    "steam-deck",
-    "deck"
-  ],
-"author": "Dawid Murawski <dawid.m@gmx.net>",
-  "license": "BSD-3-Clause",
-  "bugs": {
-    "url": "https://github.com/dawidmpunkt/RumbleDeck/issues"
-  },
-  "homepage": "https://github.com/dawidmpunkt/RumbleDeck#readme",
-  "devDependencies": {
-    "@decky/rollup": "^1.0.1",
-    "@decky/ui": "^4.7.2",
-    "@types/react": "18.3.3",
-    "@types/react-dom": "18.3.0",
-    "@types/webpack": "^5.28.5",
-    "rollup": "^4.22.5",
-    "typescript": "^5.6.2"
++   "postinstall": "make -C backend || echo '*** Skipping backend build (no toolchain). Build manually: make -C backend'"
   },
   "dependencies": {
-    "@decky/api": "^1.1.2",
-    "react-icons": "^5.3.0",
-    "tslib": "^2.7.0"
+-   "decky-frontend-lib": "^4.x"
++   "@decky/ui": "^4.9.2"
   },
-  "pnpm": {
-    "peerDependencyRules": {
-      "ignoreMissing": [
-        "react",
-        "react-dom"
-      ]
-    }
+  "devDependencies": {
+-   "rollup": "^3.x",
+-   "typescript": "^5.2"
++   "rollup": "^4.0.0",
++   "typescript": "^5.4.0",
++   "@rollup/plugin-node-resolve": "^15.2.3",
++   "@rollup/plugin-commonjs": "^25.0.7",
++   "@rollup/plugin-typescript": "^11.1.6"
   }
 }
