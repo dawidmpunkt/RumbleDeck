@@ -1,5 +1,14 @@
-import deckyPlugin from "@decky/rollup";
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import typescript from '@rollup/plugin-typescript';
 
-export default deckyPlugin({
-  // Add your extra Rollup options here
-})
+export default {
+  input: 'src/index.tsx',
+  output: {
+    file: 'dist/index.js',
+    format: 'esm',
+    sourcemap: true,
+  },
+  plugins: [resolve(), commonjs(), typescript()],
+  external: ['@decky/ui', 'react', 'react-dom']
+};
