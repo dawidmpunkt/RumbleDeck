@@ -7,7 +7,7 @@
     "tags": ["Rumble", "Haptic", "DRV2605"],
     "description": "Decky Plugin to control the Steam Deck Rumble Mod via I2C.",
     "image": "https://raw.githubusercontent.com/dawidmpunkt/RumbleDeck/main/assets/logo.png",
-  "version": "0.0.2",
+  "version": "0.0.1",
   "display_name": "RumbleDeck",
   "description": "DRV2605-based rumble control for Steam Deck",
   "dependencies": [],
