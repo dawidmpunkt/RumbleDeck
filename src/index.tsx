@@ -23,6 +23,17 @@ const start_sniffer = callable<[], void>("start_sniffer");
 const stop_sniffer = callable<[], void>("stop_sniffer");
 const query_voltage = callable<[], number>("query_voltage");
 
+const run_diagnostics = callable<[mux_mask?: number], {
+  raw: number; device_id: number; fb_timeout: boolean; over_temp: boolean; over_current: boolean; diag_pass: boolean;
+}>("run_diagnostics");
+
+const read_status   = callable<[], {
+  raw: number; device_id: number; fb_timeout: boolean; over_temp: boolean; over_current: boolean;
+}>("read_status");
+
+const set_standby   = callable<[enabled: boolean], void>("set_standby");
+const set_high_z    = callable<[enabled: boolean], void>("set_high_z");
+
 //const init_DRV = callable<[both_active: boolean], boolean>("drv_startup");
 
 //import logo from "../assets/logo.png";
@@ -70,8 +81,9 @@ function Content() {
   }*/
   
   return (
+  <>
     <PanelSection title="Main Menu">
-        <PanelSectionRow>
+      <PanelSectionRow>
         <ButtonItem
           layout="below"
           //test button with standard function
@@ -120,9 +132,9 @@ function Content() {
 			onClick={async () => {
 			  try {
 				const v = await query_voltage();
-				toaster.toast({ title: "RumbleDeck", body: `VBAT: ${v.toFixed(3)} V` });
+				toaster.toast({ title: "RumbleDeck", body: `Supply Voltage: ${v.toFixed(2)} V` });
 			  } catch (e: any) {
-				toaster.toast({ title: "RumbleDeck", body: `VBAT read failed: ${e?.message ?? e}`, duration: 5000 });
+				toaster.toast({ title: "RumbleDeck", body: `VSupply read failed: ${e?.message ?? e}`, duration: 5000 });
 			  }
 			}}
 		  >
@@ -130,6 +142,54 @@ function Content() {
 		  </ButtonItem>
 	  </PanelSectionRow>
     </PanelSection>
+	<PanelSection title="Diagnostics & Safety">
+	  <PanelSectionRow>
+		<ButtonItem layout="below" onClick={async () => {
+		  try {
+			const s = await run_diagnostics(); // or run_diagnostics(0x01)
+			toaster.toast({
+			  title: "DRV2605 Diagnostics",
+			  body: `PASS: ${s.diag_pass ? "yes" : "NO"} | OC:${s.over_current?"Y":"n"} OT:${s.over_temp?"Y":"n"} FB_TO:${s.fb_timeout?"Y":"n"} (raw 0x${s.raw.toString(16).padStart(2,"0")})`
+			});
+		  } catch (e:any) {
+			toaster.toast({ title: "DRV2605 Diagnostics", body: `Failed: ${e?.message ?? e}`, duration: 5000 });
+		  }
+		}}>
+		  Run Diagnostics
+		</ButtonItem>
+	  </PanelSectionRow>
+
+	  <PanelSectionRow>
+		<ButtonItem layout="below" onClick={() => set_standby(true)}>Standby ON</ButtonItem>
+	  </PanelSectionRow>
+	  <PanelSectionRow>
+		<ButtonItem layout="below" onClick={() => set_standby(false)}>Standby OFF</ButtonItem>
+	  </PanelSectionRow>
+
+	  <PanelSectionRow>
+		<ButtonItem layout="below" onClick={() => set_high_z(true)}>High-Z ENABLE</ButtonItem>
+	  </PanelSectionRow>
+	  <PanelSectionRow>
+		<ButtonItem layout="below" onClick={() => set_high_z(false)}>High-Z DISABLE</ButtonItem>
+	  </PanelSectionRow>
+
+	  <PanelSectionRow>
+		<ButtonItem layout="below" onClick={async () => {
+		  try {
+			const s = await read_status();
+			toaster.toast({
+			  title: "DRV2605 Status",
+			  body: `ID:${s.device_id} OC:${s.over_current?"Y":"n"} OT:${s.over_temp?"Y":"n"} FB_TO:${s.fb_timeout?"Y":"n"} (raw 0x${s.raw.toString(16).padStart(2,"0")})`
+			});
+		  } catch (e:any) {
+			toaster.toast({ title: "DRV2605 Status", body: `Read failed: ${e?.message ?? e}`, duration: 5000 });
+		  }
+		}}>
+		  Read Status
+		</ButtonItem>
+	  </PanelSectionRow>
+	</PanelSection>
+  </>
   );
 };
 

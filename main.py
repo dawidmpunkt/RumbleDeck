@@ -23,6 +23,12 @@ SNIFFER = ROOT / "backend" / "out" / "rumble-sniffer"
 # ioctl constants
 I2C_SLAVE = 0x0703
 
+# --- DRV2605 regs we use ---
+REG_STATUS = 0x00  # OC_DETECT(0), OVER_TEMP(1), FB_STS(2), DIAG_RESULT(3), DEVICE_ID[7:5]
+REG_MODE   = 0x01  # STANDBY(6), MODE[2:0]
+REG_RTP    = 0x02
+REG_LIBSEL = 0x03  # HI_Z(4)
+REG_GO     = 0x0C  # GO(0)
 
 # ---------- Low-level I²C helpers (no smbus) ----------
 class RawI2C:
@@ -97,6 +103,25 @@ def i2c_read_reg(addr: int, reg: int, n: int = 1) -> bytes: # register read help
     except Exception as e:
         logger.error(f"I2C read failed (bus={I2C_BUS}, addr=0x{addr:02X}, reg=0x{reg:02X}, n={n}): {e}")
         raise
+
+def _decode_status(s: int) -> dict: # diagnostic status read helper
+    return {
+        "raw": s,
+        "device_id": (s >> 5) & 0x7,        # 3=DRV2605, 7=DRV2605L
+        "diag_fail": bool(s & (1 << 3)),    # 0=pass, 1=fail
+        "fb_timeout": bool(s & (1 << 2)),
+        "over_temp": bool(s & (1 << 1)),
+        "over_current": bool(s & (1 << 0)),
+    }
+
+def _read_u8(addr: int, reg: int) -> int:
+    return i2c_read_reg(addr, reg, 1)[0]
+
+def _rmw_u8(addr: int, reg: int, clear_mask: int, set_mask: int):
+    v = _read_u8(addr, reg)
+    v = (v & ~clear_mask) | set_mask
+    i2c_write(addr, reg, v)
+    return v
 
 # ---------- Device-specific actions ----------
 async def drv_test():
@@ -236,6 +261,47 @@ class Plugin:
                 logger.error(f"query_voltage failed: {e}")
                 # Decky callables must return JSON-serializable; re-raise to show error in UI
                 raise
+                
+    async def read_status(self) -> dict:
+        async with self._i2c_lock:
+            s = _read_u8(DRV_ADDR, REG_STATUS)
+        return _decode_status(s)
+
+    async def set_standby(self, enabled: bool) -> None:
+        """Set/clear software standby (MODE.6)."""
+        async with self._i2c_lock:
+            _rmw_u8(DRV_ADDR, REG_MODE, clear_mask=(1 << 6), set_mask=(1 << 6) if enabled else 0)
+
+    async def set_high_z(self, enabled: bool) -> None:
+        """Force true Hi-Z on outputs (LIBSEL.4)."""
+        async with self._i2c_lock:
+            _rmw_u8(DRV_ADDR, REG_LIBSEL, clear_mask=(1 << 4), set_mask=(1 << 4) if enabled else 0)
+
+    async def run_diagnostics(self, mux_mask: int | None = None) -> dict:
+        async with self._i2c_lock:
+            if mux_mask is not None:
+                mux_select(mux_mask)
+
+            # Clear standby; set MODE=Diagnostics (6)
+            _rmw_u8(DRV_ADDR, REG_MODE, clear_mask=(1 << 6) | 0x07, set_mask=0x06)
+
+            # Start
+            i2c_write(DRV_ADDR, REG_GO, 0x01)
+
+            # Wait for GO to clear (max ~3s)
+            for _ in range(300):
+                if (_read_u8(DRV_ADDR, REG_GO) & 0x01) == 0:
+                    break
+                await asyncio.sleep(0.01)
+
+            # Read STATUS while still holding the bus
+            s_raw = _read_u8(DRV_ADDR, REG_STATUS)
+
+        s = _decode_status(s_raw)
+        s["diag_pass"] = not s.pop("diag_fail")
+        logger.info(f"Diagnostics STATUS raw=0x{s_raw:02X} -> {s}")
+        return s
+
 
     # ----- lifecycle -----
 
