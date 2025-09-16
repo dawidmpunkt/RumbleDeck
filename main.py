@@ -2,6 +2,7 @@
 
 import os
 import fcntl
+import ctypes
 import asyncio
 import subprocess
 from pathlib import Path
@@ -22,9 +23,40 @@ SNIFFER = ROOT / "backend" / "out" / "rumble-sniffer"
 
 # ioctl constants
 I2C_SLAVE = 0x0703
+I2C_RDWR  = 0x0707
+I2C_M_RD  = 0x0001
 
+# Device names
+_DEVICE_NAMES = {3: "DRV2605", 4: "DRV2604", 6: "DRV2604L", 7: "DRV2605L"}
+
+# --- DRV2605 regs we use ---
+REG_STATUS = 0x00  # OC_DETECT(0), OVER_TEMP(1), FB_STS(2), DIAG_RESULT(3), DEVICE_ID[7:5]
+REG_MODE   = 0x01  # STANDBY(6), MODE[2:0]
+REG_RTP    = 0x02
+REG_LIBSEL = 0x03  # HI_Z(4)
+REG_GO     = 0x0C  # GO(0)
 
 # ---------- Low-level I²C helpers (no smbus) ----------
+class I2CMsg(ctypes.Structure):
+    _fields_ = [
+        ("addr",  ctypes.c_uint16),
+        ("flags", ctypes.c_uint16),
+        ("len",   ctypes.c_uint16),
+        ("buf",   ctypes.c_uint64),
+    ]
+
+class I2CRdwrIoctlData(ctypes.Structure):
+    _fields_ = [
+        ("msgs",  ctypes.c_uint64),   # pointer to I2CMsg array
+        ("nmsgs", ctypes.c_uint32),
+    ]
+
+def i2c_rdwr_xfer(fd, msgs):
+    array_type = I2CMsg * len(msgs)
+    arr = array_type(*msgs)
+    data = I2CRdwrIoctlData(ctypes.addressof(arr), len(msgs))
+    fcntl.ioctl(fd, I2C_RDWR, data)
+
 class RawI2C:
     """
     Minimal /dev/i2c-* writer. Opens on enter, closes on exit.
@@ -84,19 +116,45 @@ def i2c_write(addr: int, reg: int, data):
         )
         raise
 
-def i2c_read_reg(addr: int, reg: int, n: int = 1) -> bytes: # register read helper function
-    """
-    Write the register pointer, then read n bytes.
-    """
-    try:
-        with RawI2C(I2C_BUS) as i2c:
-            i2c._set_addr(addr)
-            os.write(i2c.fd, bytes([reg]))   # set register
-            i2c._set_addr(addr)
-            return os.read(i2c.fd, n)
-    except Exception as e:
-        logger.error(f"I2C read failed (bus={I2C_BUS}, addr=0x{addr:02X}, reg=0x{reg:02X}, n={n}): {e}")
-        raise
+def i2c_read_reg(addr: int, reg: int, n: int = 1) -> bytes:
+    """Correct I2C read: [START][addr W][reg][REPEATED START][addr R][n bytes]"""
+    with RawI2C(I2C_BUS) as i2c:
+        # prepare buffers
+        wbuf = (ctypes.c_ubyte * 1)(reg & 0xFF)
+        rbuf = (ctypes.c_ubyte * n)()
+        msgs = [
+            I2CMsg(addr=addr, flags=0,        len=1, buf=ctypes.addressof(wbuf)),
+            I2CMsg(addr=addr, flags=I2C_M_RD, len=n, buf=ctypes.addressof(rbuf)),
+        ]
+        i2c_rdwr_xfer(i2c.fd, msgs)
+        return bytes(rbuf)
+
+def _decode_status(s: int) -> dict: # diagnostic status read helper
+    return {
+        "raw": s,
+        "device_id": (s >> 5) & 0x7,        # 3=DRV2605, 7=DRV2605L
+        "diag_fail": bool(s & (1 << 3)),    # 0=pass, 1=fail
+        "fb_timeout": bool(s & (1 << 2)),
+        "over_temp": bool(s & (1 << 1)),
+        "over_current": bool(s & (1 << 0)),
+    }
+
+def _snapshot_status() -> dict: # make diagnostic status more verbose
+    s  = _decode_status(_read_u8(DRV_ADDR, REG_STATUS))  # NOTE: clears latched bits
+    md = _read_u8(DRV_ADDR, REG_MODE)
+    lb = _read_u8(DRV_ADDR, REG_LIBSEL)
+    name = _DEVICE_NAMES.get(s["device_id"], f"Unknown({s['device_id']})")
+    s.update({"device_name": name})
+    return s
+
+def _read_u8(addr: int, reg: int) -> int:
+    return i2c_read_reg(addr, reg, 1)[0]
+
+def _rmw_u8(addr: int, reg: int, clear_mask: int, set_mask: int):
+    v = _read_u8(addr, reg)
+    v = (v & ~clear_mask) | set_mask
+    i2c_write(addr, reg, v)
+    return v
 
 # ---------- Device-specific actions ----------
 async def drv_test():
@@ -144,25 +202,25 @@ class Plugin:
         logger.info(f"drv_startup(both_active={both_active})")
         async with self._i2c_lock:
             # Select driver 1
-            mux_select(0x01)
+            #mux_select(0x01)
             drv_init()
             logger.info("Driver 1 initialized")
 
-            if both_active:
+            #if both_active:
                 # Select driver 2
-                mux_select(0x02)
-                drv_init()
-                logger.info("Driver 2 initialized")
+            #    mux_select(0x02)
+            #    drv_init()
+            #    logger.info("Driver 2 initialized")
 
                 # Enable both
-                mux_select(0x03)
-                await drv_test()
-                logger.info("Both drivers active")
-            else:
+            #    mux_select(0x03)
+            #    await drv_test()
+            #    logger.info("Both drivers active")
+            #else:
                 # Keep only driver 1
-                mux_select(0x01)
-                await drv_test()
-                logger.info("Driver 1 active")
+            #    mux_select(0x01)
+            #    await drv_test()
+            #    logger.info("Driver 1 active")
 
     async def start_sniffer(self) -> None:
         if self.sniffer_process:
@@ -236,6 +294,38 @@ class Plugin:
                 logger.error(f"query_voltage failed: {e}")
                 # Decky callables must return JSON-serializable; re-raise to show error in UI
                 raise
+                
+    async def read_status(self) -> dict:
+        async with self._i2c_lock:
+            snap = _snapshot_status()
+        return snap
+
+    async def set_standby(self, enabled: bool) -> None:
+        """Set/clear software standby (MODE.6)."""
+        async with self._i2c_lock:
+            _rmw_u8(DRV_ADDR, REG_MODE, clear_mask=(1 << 6), set_mask=(1 << 6) if enabled else 0)
+
+    async def set_high_z(self, enabled: bool) -> None:
+        """Force true Hi-Z on outputs (LIBSEL.4)."""
+        async with self._i2c_lock:
+            _rmw_u8(DRV_ADDR, REG_LIBSEL, clear_mask=(1 << 4), set_mask=(1 << 4) if enabled else 0)
+
+    async def run_diagnostics(self, mux_mask: int | None = None) -> dict:
+        async with self._i2c_lock:
+            if mux_mask is not None:
+                mux_select(mux_mask)
+            # MODE = Diagnostics (6), clear standby
+            _rmw_u8(DRV_ADDR, REG_MODE, clear_mask=(1 << 6) | 0x07, set_mask=0x06)
+            i2c_write(DRV_ADDR, REG_GO, 0x01)
+            for _ in range(300):
+                if (_read_u8(DRV_ADDR, REG_GO) & 0x01) == 0:
+                    break
+                await asyncio.sleep(0.01)
+            snap = _snapshot_status()
+        snap["diag_pass"] = not snap.pop("diag_fail", False)
+        logger.info(f"Diagnostics -> {snap}")
+        return snap
+
 
     # ----- lifecycle -----
 
