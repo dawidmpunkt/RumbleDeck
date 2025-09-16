@@ -67,7 +67,6 @@ class RawI2C:
         self._set_addr(addr)
         os.write(self.fd, payload)
 
-
 def i2c_write(addr: int, reg: int, data):
     """Open → write → close with robust logging."""
     try:
@@ -85,6 +84,19 @@ def i2c_write(addr: int, reg: int, data):
         )
         raise
 
+def i2c_read_reg(addr: int, reg: int, n: int = 1) -> bytes: # register read helper function
+    """
+    Write the register pointer, then read n bytes.
+    """
+    try:
+        with RawI2C(I2C_BUS) as i2c:
+            i2c._set_addr(addr)
+            os.write(i2c.fd, bytes([reg]))   # set register
+            i2c._set_addr(addr)
+            return os.read(i2c.fd, n)
+    except Exception as e:
+        logger.error(f"I2C read failed (bus={I2C_BUS}, addr=0x{addr:02X}, reg=0x{reg:02X}, n={n}): {e}")
+        raise
 
 # ---------- Device-specific actions ----------
 async def drv_test():
@@ -93,6 +105,9 @@ async def drv_test():
         i2c_write(DRV_ADDR, 0x0C, 0x01)  # GO = 1
         await asyncio.sleep(0.2)
 
+def _vbat_to_volts(raw: int) -> float: # Helper to convert VBAT into volts
+    # Per DRV2605 docs: 5.6 V full-scale
+    return (raw & 0xFF) * 5.6 / 255.0
 
 def drv_init():
     """Initialize DRV2605 with your register sequence."""
@@ -197,6 +212,30 @@ class Plugin:
                 self._sniffer_reader.cancel()
                 self._sniffer_reader = None
             logger.info("Sniffer stopped")
+
+    async def query_voltage(self) -> float:
+        """
+        Returns VDD (in volts). If the chip isn't actively playing,
+        try a short tick to refresh VBAT, per datasheet.
+        """
+        async with self._i2c_lock:
+            try:
+                # 1) Try a direct read
+                raw = i2c_read_reg(DRV_ADDR, 0x21, 1)[0]
+                volts = _vbat_to_volts(raw)
+                # If clearly invalid, nudge the device to "active" and sample again
+                if volts <= 0.1:
+                    # brief GO pulse
+                    i2c_write(DRV_ADDR, 0x0C, 0x01)
+                    await asyncio.sleep(0.03)
+                    raw = i2c_read_reg(DRV_ADDR, 0x21, 1)[0]
+                    volts = _vbat_to_volts(raw)
+                logger.info(f"VBAT raw=0x{raw:02X} -> {volts:.3f} V")
+                return float(volts)
+            except Exception as e:
+                logger.error(f"query_voltage failed: {e}")
+                # Decky callables must return JSON-serializable; re-raise to show error in UI
+                raise
 
     # ----- lifecycle -----
 
