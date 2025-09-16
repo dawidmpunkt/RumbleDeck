@@ -21,6 +21,7 @@ const backend_function = callable<[], void>("my_backend_function");
 const init_DRV = callable<[], void>("drv_startup");
 const start_sniffer = callable<[], void>("start_sniffer");
 const stop_sniffer = callable<[], void>("stop_sniffer");
+const query_voltage = callable<[], number>("query_voltage");
 
 //const init_DRV = callable<[both_active: boolean], boolean>("drv_startup");
 
@@ -113,6 +114,21 @@ function Content() {
           {"Stop Sniffer"}          
         </ButtonItem>
       </PanelSectionRow>
+	  <PanelSectionRow>
+		  <ButtonItem
+			layout="below"
+			onClick={async () => {
+			  try {
+				const v = await query_voltage();
+				toaster.toast({ title: "RumbleDeck", body: `VBAT: ${v.toFixed(3)} V` });
+			  } catch (e: any) {
+				toaster.toast({ title: "RumbleDeck", body: `VBAT read failed: ${e?.message ?? e}`, duration: 5000 });
+			  }
+			}}
+		  >
+			Query Voltage
+		  </ButtonItem>
+	  </PanelSectionRow>
     </PanelSection>
   );
 };
