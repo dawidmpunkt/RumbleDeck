@@ -4,7 +4,7 @@ import {
   PanelSectionRow,
   SliderField,
   ToggleField,
-  //Navigation,
+  Navigation,
   staticClasses
 } from "@decky/ui";
 import {
@@ -13,9 +13,9 @@ import {
   callable,
   definePlugin,
   toaster,
-  // routerHook
+  routerHook
 } from "@decky/api"
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { MdOutlineVibration } from "react-icons/md";
 
 type Status = {
@@ -31,6 +31,9 @@ type Status = {
   mode: number;     // 0..7
   library: number;  // 0..7
 };
+
+// --- advanced pages
+type AdvancedSection = "drive" | "timing" | "sequencer" | "presets";
 
 // --- Sequencer types
 type Step = { isWait: boolean; val: number }; // effect id (1..127) or wait ms (0..1270)
@@ -90,6 +93,10 @@ const libById = (id: number) => LIBRARIES.find(l => l.id === id) ?? LIBRARIES[0]
 // --- callable for device reset
 const reset_device = callable<[], void>("reset_device");
 
+// --- callables for setting actuator parameters: rated voltage and overdrive clamp
+const get_drive_params = callable<[], { rated: number; overdrive: number }>("get_drive_params");
+const set_drive_params = callable<[rated: number, overdrive: number], void>("set_drive_params");
+
 // --- Flags getter for toggle buttons
 const get_runtime_flags = callable<[], { standby: boolean; hi_z: boolean; sniffer: boolean; use_mux: boolean; autostart_sniffer?: boolean; }>("get_runtime_flags");
 
@@ -140,6 +147,40 @@ const MODE_NAMES = [
 ];
 const set_standby   = callable<[enabled: boolean], void>("set_standby");
 const set_high_z    = callable<[enabled: boolean], void>("set_high_z");
+
+// --- callables for advanced and lazy subpages
+const BASE = "/rumbledeck";
+let routesAdded = false;
+
+
+const TimingPage = lazy(async () => ({
+  default: () => (
+    <PanelSection title="Timing Offsets">
+      <PanelSectionRow><TimingOffsets /></PanelSectionRow>
+    </PanelSection>
+  ),
+}));
+
+const DrivePage = lazy(async () => ({
+  default: () => (
+    <PanelSection title="Drive Parameters">
+      <PanelSectionRow><DriveParams /></PanelSectionRow>
+    </PanelSection>
+  ),
+}));
+
+const SequencerPage = lazy(async () => ({
+  default: () => (
+    <PanelSection title="Sequencer">
+      <PanelSectionRow><SequencerEditor /></PanelSectionRow>
+    </PanelSection>
+  ),
+}));
+
+// simple suspense wrapper
+function S({ children }: { children: JSX.Element }) {
+  return <Suspense fallback={<div className={staticClasses.Text}>Loading…</div>}>{children}</Suspense>;
+}
 
 //import logo from "../assets/logo.png";
 
@@ -510,6 +551,136 @@ function TimingOffsets() {
   );
 }
 
+// --- function to set actuator parameters: rated voltage and overdrive clamp
+function DriveParams() {
+  const [rated, setRated] = useState(0);
+  const [over, setOver] = useState(0);
+
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.trunc(v)));
+
+  const readFromDevice = async () => {
+    try {
+      const r = await get_drive_params();
+      setRated(clamp(r.rated));
+      setOver(clamp(r.overdrive));
+      toaster.toast({ title: "RumbleDeck", body: "Drive params read" });
+    } catch (e: any) {
+      toaster.toast({ title: "RumbleDeck", body: `Read failed: ${e?.message ?? e}`, duration: 5000 });
+    }
+  };
+
+  const applyToDevice = async () => {
+    try {
+      await set_drive_params(clamp(rated), clamp(over));
+      toaster.toast({ title: "RumbleDeck", body: "Drive params applied" });
+    } catch (e: any) {
+      toaster.toast({ title: "RumbleDeck", body: `Apply failed: ${e?.message ?? e}`, duration: 5000 });
+    }
+  };
+
+  useEffect(() => { readFromDevice(); }, []);
+
+  return (
+    <div className="p-2 space-y-2">
+      <div className={staticClasses.Text}>Drive Parameters (0x16–0x17)</div>
+
+      <SliderField
+        label={`Rated Voltage (0x16): ${rated}`}
+        value={rated}
+        min={0}
+        max={255}
+        step={1}
+        onChange={(v: number) => setRated(v)}
+      />
+      <div className={staticClasses.Text} style={{ opacity: 0.7, marginTop: -6 }}>
+        Sets the nominal drive level used by the device.
+      </div>
+
+      <SliderField
+        label={`Overdrive Clamp (0x17): ${over}`}
+        value={over}
+        min={0}
+        max={255}
+        step={1}
+        onChange={(v: number) => setOver(v)}
+      />
+      <div className={staticClasses.Text} style={{ opacity: 0.7, marginTop: -6 }}>
+        Limits peak overdrive strength for snappier starts without overshoot.
+      </div>
+
+      <div className="flex gap-2 mt-2">
+        <ButtonItem onClick={readFromDevice}>Read From Device</ButtonItem>
+        <ButtonItem onClick={applyToDevice}>Apply</ButtonItem>
+      </div>
+    </div>
+  );
+}
+
+function AdvancedShell() {
+  const [section, setSection] = useState<AdvancedSection>("drive");
+
+  const Item: React.FC<{ id: AdvancedSection; title: string; desc?: string }> = ({ id, title, desc }) => (
+    <ButtonItem
+      onClick={() => setSection(id)}
+      description={section === id ? "Selected" : desc}
+    >
+      {title}
+    </ButtonItem>
+  );
+
+  return (
+    <div
+      style={{
+        // Force a two-column canvas that ignores parent PanelSection stacking
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 12,
+        padding: 12,
+        width: "100%",
+        boxSizing: "border-box",
+      }}
+    >
+      {/* Sidebar (fixed width) */}
+      <div style={{ width: 260, flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+        <div className={staticClasses.Title}>Advanced</div>
+        <Item id="drive"     title="Drive Params"   desc="Rated Voltage / Overdrive Clamp" />
+        <Item id="timing"    title="Timing Offsets" desc="Overdrive / Sustain / Brake" />
+        <Item id="sequencer" title="Sequencer"      desc="Waveform + Wait editor" />
+        <Item id="presets"   title="Presets"        desc="Save / Load / Apply" />
+      </div>
+
+      {/* Content (fills remaining space) */}
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+        {section === "drive" && (
+          <PanelSection title="Drive Parameters">
+            <PanelSectionRow><DriveParams /></PanelSectionRow>
+          </PanelSection>
+        )}
+        {section === "timing" && (
+          <PanelSection title="Timing Offsets">
+            <PanelSectionRow><TimingOffsets /></PanelSectionRow>
+          </PanelSection>
+        )}
+        {section === "sequencer" && (
+          <PanelSection title="Sequencer">
+            <PanelSectionRow><SequencerEditor /></PanelSectionRow>
+          </PanelSection>
+        )}
+        {section === "presets" && (
+          <PanelSection title="Presets">
+            <PanelSectionRow>
+              <div className={staticClasses.Text}>
+                Use the Sequencer page to edit; manage here if you split it later.
+              </div>
+            </PanelSectionRow>
+          </PanelSection>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function StatusCard({ s }: { s: Status | null }) {
   if (!s) return null;
   const flags = [s.over_current && "OC", s.over_temp && "OT", s.fb_timeout && "FB_TO"]
@@ -581,11 +752,9 @@ function Content() {
     })();
   }, []);
 
-
-  return (
-    <>
-
-	  <PanelSection title="Main Menu">
+	return (
+	  <>
+		<PanelSection title="Main Menu">
 		  <PanelSectionRow>
 			<ButtonItem layout="below" onClick={() => call(backend_function, "Test motors triggered")}>
 			  Test Motors
@@ -597,8 +766,109 @@ function Content() {
 			  Initialize Drivers
 			</ButtonItem>
 		  </PanelSectionRow>
+		</PanelSection> {/* <-- close Main Menu (was missing) */}
 
-	  	  <PanelSectionRow>
+		<PanelSection title="Haptics">
+		  <PanelSectionRow>
+			<MuxControls />
+		  </PanelSectionRow>
+		  <PanelSectionRow>
+			<TimingOffsets />
+		  </PanelSectionRow>
+		  <PanelSectionRow>
+			<SequencerEditor />
+		  </PanelSectionRow>
+		  <PanelSectionRow>
+			<DriveParams />
+		  </PanelSectionRow>
+		</PanelSection>
+
+		  <PanelSection title="Diagnostics & Safety">
+			<PanelSectionRow>
+			  <StatusCard s={status} />
+			</PanelSectionRow>
+			<PanelSectionRow>
+			  <ButtonItem
+				layout="below"
+				onClick={async () => {
+				  try {
+					const s = await run_diagnostics(); // or run_diagnostics(0x01)
+					setStatus(s);                      // <-- keep panel in sync
+					toastStatus("DRV2605 Diagnostics", s);
+				  } catch (e: any) {
+					toaster.toast({ title: "DRV2605 Diagnostics", body: `Failed: ${e?.message ?? e}`, duration: 6000 });
+				  }
+				}}
+			  >
+				Run Diagnostics
+			  </ButtonItem>
+			</PanelSectionRow>
+
+			<PanelSectionRow>
+			  <ToggleField
+				label={`Standby: ${standby ? "On" : "Off"}`}
+				checked={standby}
+				onChange={async (val: boolean) => {
+				  try { await set_standby(val); setStandby(val); }
+				  catch (e: any) { toaster.toast({ title: "RumbleDeck", body: `Standby failed: ${e?.message ?? e}`, duration: 5000 }); }
+				}}
+			  />
+			</PanelSectionRow>
+
+			<PanelSectionRow>
+			  <ToggleField
+				label={`High-Z: ${hiZ ? "On" : "Off"}`}
+				checked={hiZ}
+				onChange={async (val: boolean) => {
+				  try { await set_high_z(val); setHiZ(val); }
+				  catch (e: any) { toaster.toast({ title: "RumbleDeck", body: `High-Z failed: ${e?.message ?? e}`, duration: 5000 }); }
+				}}
+			  />
+			</PanelSectionRow>
+			<PanelSectionRow>
+			  <ButtonItem
+				layout="below"
+				onClick={async () => {
+				  try {
+					const s = await read_status();
+					setStatus(s); // <-- keep panel in sync
+					toaster.toast({ title: "DRV2605 Status", body: `${s.device_name} (ID=${s.device_id})`, duration: 3000 });
+				  } catch (e: any) {
+					toaster.toast({ title: "DRV2605 Status", body: `Read failed: ${e?.message ?? e}`, duration: 6000 });
+				  }
+				}}
+			  >
+				Read Status
+			  </ButtonItem>
+			</PanelSectionRow>
+			<PanelSectionRow>
+			  <ButtonItem
+				layout="below"
+				onClick={async () => {
+				  try {
+					await reset_device();
+					toaster.toast({ title: "RumbleDeck", body: "Device reset completed" });
+				  } catch (e: any) {
+					// make sure we always show *something* useful
+					const msg = e?.message ?? String(e) ?? "Unknown error";
+					toaster.toast({ title: "RumbleDeck", body: `Reset failed: ${msg}`, duration: 6000 });
+					console.error(e);
+				  }
+				}}
+			  >
+				Reset DRV2605
+			  </ButtonItem>
+			</PanelSectionRow>
+			<PanelSectionRow>
+			  <ButtonItem layout="below" onClick={() => Navigation.Navigate("/rumbledeck/advanced")}>
+				Open Advanced Page
+			  </ButtonItem>
+			</PanelSectionRow>
+		  </PanelSection>
+
+		{/* These rows must live inside a PanelSection – wrap them */}
+		<PanelSection title="Sniffer & Utilities">
+		  <PanelSectionRow>
 			<ToggleField
 			  label={`Autostart Sniffer: ${autoStart ? "On" : "Off"}`}
 			  checked={autoStart}
@@ -617,137 +887,74 @@ function Content() {
 		    />
 		  </PanelSectionRow>
 		  <PanelSectionRow>
-			<ButtonItem
+			<ButtonItem 
 			  layout="below"
 			  onClick={async () => {
 				try {
 				  const v = await query_voltage();
-				  toaster.toast({ title: "RumbleDeck", body: `Supply Voltage: ${v.toFixed(2)} V` });
+					toaster.toast({ title: "RumbleDeck", body: `Supply Voltage: ${v.toFixed(2)} V` });
 				} catch (e: any) {
 				  toaster.toast({ title: "RumbleDeck", body: `VSupply read failed: ${e?.message ?? e}`, duration: 5000 });
-				}
+				  }
 			  }}
 			>
 			  Query Voltage
 			</ButtonItem>
 		  </PanelSectionRow>
-	  </PanelSection>
-	  
+		</PanelSection>
 
-	  <PanelSection title="Haptics">
-        <PanelSectionRow>
-          <MuxControls />
-        </PanelSectionRow>
-		<PanelSectionRow>
-		  <TimingOffsets />
-		</PanelSectionRow>
-        <PanelSectionRow>
-          <SequencerEditor />
-        </PanelSectionRow>
-	  </PanelSection>
-
-      <PanelSection title="Diagnostics & Safety">
-        <PanelSectionRow>
-		  <StatusCard s={status} />
-		</PanelSectionRow>
-		<PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            onClick={async () => {
-              try {
-                const s = await run_diagnostics(); // or run_diagnostics(0x01)
-                setStatus(s);                      // <-- keep panel in sync
-                toastStatus("DRV2605 Diagnostics", s);
-              } catch (e: any) {
-                toaster.toast({ title: "DRV2605 Diagnostics", body: `Failed: ${e?.message ?? e}`, duration: 6000 });
-              }
-            }}
-          >
-            Run Diagnostics
-          </ButtonItem>
-        </PanelSectionRow>
-
-		<PanelSectionRow>
-		  <ToggleField
-		    label={`Standby: ${standby ? "On" : "Off"}`}
-		    checked={standby}
-		    onChange={async (val: boolean) => {
-			  try { await set_standby(val); setStandby(val); }
-			  catch (e: any) { toaster.toast({ title: "RumbleDeck", body: `Standby failed: ${e?.message ?? e}`, duration: 5000 }); }
-		    }}
-		  />
-		</PanelSectionRow>
-
-		<PanelSectionRow>
-		  <ToggleField
-			label={`High-Z: ${hiZ ? "On" : "Off"}`}
-			checked={hiZ}
-			onChange={async (val: boolean) => {
-			  try { await set_high_z(val); setHiZ(val); }
-			  catch (e: any) { toaster.toast({ title: "RumbleDeck", body: `High-Z failed: ${e?.message ?? e}`, duration: 5000 }); }
-			}}
-		  />
-		</PanelSectionRow>
-        <PanelSectionRow>
-          <ButtonItem
-            layout="below"
-            onClick={async () => {
-              try {
-                const s = await read_status();
-                setStatus(s); // <-- keep panel in sync
-                toaster.toast({ title: "DRV2605 Status", body: `${s.device_name} (ID=${s.device_id})`, duration: 3000 });
-              } catch (e: any) {
-                toaster.toast({ title: "DRV2605 Status", body: `Read failed: ${e?.message ?? e}`, duration: 6000 });
-              }
-            }}
-          >
-            Read Status
-          </ButtonItem>
-        </PanelSectionRow>
-		<PanelSectionRow>
-		  <ButtonItem
-			layout="below"
-			onClick={async () => {
-			  try {
-				await reset_device();
-				toaster.toast({ title: "RumbleDeck", body: "Device reset completed" });
-			  } catch (e: any) {
-				// make sure we always show *something* useful
-				const msg = e?.message ?? String(e) ?? "Unknown error";
-				toaster.toast({ title: "RumbleDeck", body: `Reset failed: ${msg}`, duration: 6000 });
-				console.error(e);
-			  }
-			}}
-		  >
-			Reset DRV2605
-		  </ButtonItem>
-		</PanelSectionRow>
-
-      </PanelSection>
-    </>
-  );
+		<PanelSection title="Advanced">
+		  <PanelSectionRow>
+			<ButtonItem onClick={() => Navigation.Navigate(`${BASE}/advanced`)}>
+				Open new Advanced
+			</ButtonItem>
+		  </PanelSectionRow>
+		</PanelSection>
+	  </>
+	);
 }
 
 export default definePlugin(() => {
   console.log("Template plugin initializing, this is called once on frontend startup")
+  // register a subpage route
+  if (!routesAdded) {
+	routerHook.addRoute(
+	  `${BASE}/advanced`,
+	  () => <AdvancedShell />,   // <- render the shell directly
+	  { exact: true }
+	);
+	
+	routerHook.addRoute(
+	  `${BASE}/drive`,
+	  () => (
+		<Suspense fallback={<div className={staticClasses.Text}>Loading…</div>}>
+		  <DrivePage />
+		</Suspense>
+	  ),
+	  { exact: true }
+	);
 
-  // serverApi.routerHook.addRoute("/decky-plugin-test", DeckyPluginRouterTest, {
-  //   exact: true,
-  // });
+	routerHook.addRoute(
+	  `${BASE}/timing`,
+	  () => (
+		<Suspense fallback={<div className={staticClasses.Text}>Loading…</div>}>
+		  <TimingPage />
+		</Suspense>
+	  ),
+	  { exact: true }
+	);
 
-  // Add an event listener to the "timer_event" event from the backend
-  /*const listener = addEventListener<[
-    test1: string,
-    test2: number,
-    test3: number
-  ]>("my_backend_function", (test1, test2, test3) => {
-    console.log("event:", test1, test2, test3)
-    toaster.toast({
-      title: "Driver initialized",
-      body: `${test1}, ${test2}, ${test3}`
-    });
-  });*/
-
+	routerHook.addRoute(
+	  `${BASE}/sequencer`,
+	  () => (
+		<Suspense fallback={<div className={staticClasses.Text}>Loading…</div>}>
+		  <SequencerPage />
+		</Suspense>
+	  ),
+	  { exact: true }
+	);
+    routesAdded = true;
+  }
   return {
     // The name shown in various decky menus
     name: "RumbleDeck",
@@ -759,10 +966,13 @@ export default definePlugin(() => {
     icon: <MdOutlineVibration />,
     // The function triggered when your plugin unloads
     onDismount() {
-      console.log("Unloading")
-    //  removeEventListener("my_backend_function", listener);
-      //removeEventListener("drv_startup", listener);
-      // serverApi.routerHook.removeRoute("/decky-plugin-test");
-    },
+      if (routesAdded) {
+        routerHook.removeRoute(`${BASE}/advanced`);
+        routerHook.removeRoute(`${BASE}/drive`);
+        routerHook.removeRoute(`${BASE}/timing`);
+        routerHook.removeRoute(`${BASE}/sequencer`);
+        routesAdded = false;
+      }
+	}
   };
 });

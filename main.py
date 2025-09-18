@@ -598,6 +598,41 @@ class Plugin:
             "autostart_sniffer": bool(s.get("autostart_sniffer", False)),
         }
 
+    # --- Setting Actuator Parameters (Rated Voltage and Overdrive Clamp)
+    async def get_drive_params(self) -> dict:
+        """
+        Read Rated Voltage (0x16) and Overdrive Clamp (0x17), 0..255 each.
+        """
+        async with self._i2c_lock:
+            if hasattr(self, "_mux_select_current"):
+                self._mux_select_current()
+            try:
+                rated = i2c_read_reg(DRV_ADDR, 0x16, 1)[0]
+                over  = i2c_read_reg(DRV_ADDR, 0x17, 1)[0]
+                logger.info(f"Drive params read: rated={rated}, overdrive={over}")
+                return {"rated": int(rated), "overdrive": int(over)}
+            except Exception as e:
+                logger.error(f"get_drive_params failed: {e}")
+                raise
+
+    async def set_drive_params(self, rated: int, overdrive: int) -> None:
+        """
+        Write Rated Voltage (0x16) and Overdrive Clamp (0x17). Values clamped to 0..255.
+        Also persists to settings as 'last_drive'.
+        """
+        def _clamp(v: int) -> int: return max(0, min(255, int(v)))
+        rv = _clamp(rated)
+        od = _clamp(overdrive)
+        async with self._i2c_lock:
+            if hasattr(self, "_mux_select_current"):
+                self._mux_select_current()
+            i2c_write(DRV_ADDR, 0x16, rv)
+            i2c_write(DRV_ADDR, 0x17, od)
+            logger.info(f"Drive params set: rated={rv}, overdrive={od}")
+        s = _load_settings()
+        s["last_drive"] = {"rated": rv, "overdrive": od}
+        _save_settings(s)
+
     # ----- lifecycle -----
 
     async def _main(self):
@@ -649,6 +684,13 @@ class Plugin:
                 )
             except Exception as e:
                 logger.warning(f"Reapply timing offsets failed: {e}")
+
+        if isinstance(s.get("last_drive"), dict):
+            ld = s["last_drive"]
+            try:
+                await self.set_drive_params(int(ld.get("rated", 0)), int(ld.get("overdrive", 0)))
+            except Exception as e:
+                logger.warning(f"Reapply drive params failed: {e}")
 
         if s.get("autostart_sniffer", False):
             try:
