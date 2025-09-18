@@ -5,13 +5,20 @@ import fcntl
 import ctypes
 import asyncio
 import subprocess
+import json
 from pathlib import Path
 
 from decky import logger  # Decky-provided logger
 
 # ---------- Config ----------
+# Path to file to store user defined settings
+SETTINGS_FILE = Path(os.path.expanduser("~")) / "homebrew" / "settings" / "RumbleDeck.json"
+
 # Select I²C bus via env var (default 0 is typical on Steam Deck)
 I2C_BUS = int(os.getenv("RUMBLEDECK_I2C_BUS", "0"))
+
+# Select in plugin, if I2C-multiplexer is present (different RumbleBoard versions). Default = off
+USE_MUX  = os.getenv("RUMBLEDECK_USE_MUX", "0") == "1"
 
 # Device addresses
 DRV_ADDR = int(os.getenv("RUMBLEDECK_DRV_ADDR", "0x5A"), 0)  # DRV2605
@@ -56,6 +63,12 @@ def i2c_rdwr_xfer(fd, msgs):
     arr = array_type(*msgs)
     data = I2CRdwrIoctlData(ctypes.addressof(arr), len(msgs))
     fcntl.ioctl(fd, I2C_RDWR, data)
+
+# Function to select if I2C-multiplexer is present (different RumbleBoard versions). Default = off
+
+def mux_select(mask: int):
+    if USE_MUX:
+        i2c_write(MUX_ADDR, 0x00, mask & 0xFF)
 
 class RawI2C:
     """
@@ -129,6 +142,14 @@ def i2c_read_reg(addr: int, reg: int, n: int = 1) -> bytes:
         i2c_rdwr_xfer(i2c.fd, msgs)
         return bytes(rbuf)
 
+def _encode_wait_ms(ms: int) -> int:
+    """
+    DRV2605 wait command: set bit7=1, lower 7 bits = (time / 10ms).
+    Clamps to 0..1270ms (0..127 * 10ms).
+    """
+    ticks = max(0, min(127, ms // 10))
+    return 0x80 | ticks  # 0x80..0xFF
+
 def _decode_status(s: int) -> dict: # diagnostic status read helper
     return {
         "raw": s,
@@ -156,6 +177,30 @@ def _rmw_u8(addr: int, reg: int, clear_mask: int, set_mask: int):
     i2c_write(addr, reg, v)
     return v
 
+# --- functions for the user preset manager ----
+
+def _load_settings() -> dict:
+    try:
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
+    # defaults
+    data.setdefault("presets", {})
+    data.setdefault("use_mux", False)
+    data.setdefault("mux_mask", 1)  # 1=A, 2=B, 3=Both
+    data.setdefault("persist_standby", False)
+    data.setdefault("persist_hi_z", False)
+    data.setdefault("autostart_sniffer", False)
+    data.setdefault("last_lib", None)           # int or None
+    data.setdefault("last_offsets", None)       # {"overdrive":..,"sustain_pos":..,"sustain_neg":..,"brake":..} or None
+    return data
+
+def _save_settings(data: dict) -> None:
+    SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+
 # ---------- Device-specific actions ----------
 async def drv_test():
     """Simple test: trigger rumble 3× (non-blocking)."""
@@ -178,18 +223,45 @@ def drv_init():
     i2c_write(DRV_ADDR, 3,  1)
     i2c_write(DRV_ADDR, 1,  0)
 
-
-def mux_select(mask: int):
-    """Write channel mask to I²C mux control register (0x00)."""
-    i2c_write(MUX_ADDR, 0x00, mask & 0xFF)
-
-
 # ---------- Decky plugin ----------
 class Plugin:
     def __init__(self, *args, **kwargs):
         self.sniffer_process = None
         self._sniffer_reader = None
         self._i2c_lock = asyncio.Lock()
+        # mux state (loaded in _main)
+        self.use_mux = False
+        self.mux_mask = 1
+
+    # helper: select current mux channel if enabled
+    def _mux_select_current(self):
+        if self.use_mux:
+            i2c_write(MUX_ADDR, 0x00, self.mux_mask & 0xFF)
+
+    # ---------- MUX config callables ----------
+    async def get_config(self) -> dict:
+        s = _load_settings()
+        # keep runtime in sync
+        self.use_mux = bool(s.get("use_mux", False))
+        self.mux_mask = int(s.get("mux_mask", 1)) or 1
+        return {"use_mux": self.use_mux, "mux_mask": self.mux_mask}
+
+    async def set_use_mux(self, enabled: bool) -> None:
+        s = _load_settings()
+        s["use_mux"] = bool(enabled)
+        _save_settings(s)
+        self.use_mux = s["use_mux"]
+        logger.info(f"use_mux set to {self.use_mux}")
+
+    async def set_mux_mask(self, mask: int) -> None:
+        m = int(mask)
+        if m not in (1, 2, 3):
+            raise ValueError("mux_mask must be 1 (A), 2 (B), or 3 (Both)")
+        s = _load_settings()
+        s["mux_mask"] = m
+        _save_settings(s)
+        self.mux_mask = m
+        logger.info(f"mux_mask set to {self.mux_mask}")
 
     # ----- callable backend methods (async) -----
 
@@ -201,6 +273,8 @@ class Plugin:
     async def drv_startup(self, both_active: bool = False) -> None:
         logger.info(f"drv_startup(both_active={both_active})")
         async with self._i2c_lock:
+            # needs rework to work with mux_select
+            
             # Select driver 1
             #mux_select(0x01)
             drv_init()
@@ -277,6 +351,7 @@ class Plugin:
         try a short tick to refresh VBAT, per datasheet.
         """
         async with self._i2c_lock:
+            self._mux_select_current()
             try:
                 # 1) Try a direct read
                 raw = i2c_read_reg(DRV_ADDR, 0x21, 1)[0]
@@ -304,11 +379,17 @@ class Plugin:
         """Set/clear software standby (MODE.6)."""
         async with self._i2c_lock:
             _rmw_u8(DRV_ADDR, REG_MODE, clear_mask=(1 << 6), set_mask=(1 << 6) if enabled else 0)
-
+        s = _load_settings()
+        s["persist_standby"] = bool(enabled)
+        _save_settings(s)
+    
     async def set_high_z(self, enabled: bool) -> None:
         """Force true Hi-Z on outputs (LIBSEL.4)."""
         async with self._i2c_lock:
             _rmw_u8(DRV_ADDR, REG_LIBSEL, clear_mask=(1 << 4), set_mask=(1 << 4) if enabled else 0)
+        s = _load_settings()
+        s["persist_hi_z"] = bool(enabled)
+        _save_settings(s)
 
     async def run_diagnostics(self, mux_mask: int | None = None) -> dict:
         async with self._i2c_lock:
@@ -326,11 +407,201 @@ class Plugin:
         logger.info(f"Diagnostics -> {snap}")
         return snap
 
+    # ------------ Preset Manager functions
+    async def list_presets(self) -> list[str]:
+        s = _load_settings()
+        return sorted(s.get("presets", {}).keys())
+
+    async def save_preset(self, name: str, lib_id: int, steps: list[int]) -> None:
+        s = _load_settings()
+        s.setdefault("presets", {})[name] = {"lib": int(lib_id), "steps": [(int(x) & 0xFF) for x in steps[:8]]}
+        _save_settings(s)
+        logger.info(f"Saved preset '{name}'")
+
+    async def load_preset(self, name: str) -> dict:
+        s = _load_settings()
+        p = s.get("presets", {}).get(name)
+        if not p:
+            raise ValueError(f"Preset '{name}' not found")
+        return p  # {"lib": int, "steps": [ints]}
+
+    async def delete_preset(self, name: str) -> None:
+        s = _load_settings()
+        if s.get("presets", {}).pop(name, None) is None:
+            raise ValueError(f"Preset '{name}' not found")
+        _save_settings(s)
+        logger.info(f"Deleted preset '{name}'")
+
+    async def apply_preset(self, name: str) -> None:
+        p = await self.load_preset(name)
+        await self.set_library(int(p["lib"]))
+        await self.program_sequence([int(x) for x in p["steps"]])
+        await self.play_sequence()    
+
+    # ------------ Library select functions
+    async def set_library(self, lib_id: int) -> None:
+        """
+        Select ROM library (0..N). Exact meanings depend on DRV2605 variant.
+        """
+        async with self._i2c_lock:
+            self._mux_select_current()
+            i2c_write(DRV_ADDR, 0x03, lib_id & 0xFF)
+            logger.info(f"Library set to {lib_id}")
+        s = _load_settings()
+        s["last_lib"] = int(lib_id)
+        _save_settings(s)
+
+    async def program_sequence(self, steps: list[int]) -> None:
+        """
+        Program up to 8 sequence slots (0x04..0x0B). 
+        Each item is either an effect ID (0x01..0x7F) or a WAIT cmd (0x80..0xFF).
+        steps: up to 8 bytes:
+          - 0x01..0x7F = effect
+          - 0x80..0xFF = wait (ticks of 10ms)
+        Backend appends 0x00 terminator if missing.
+        """
+        if not isinstance(steps, list):
+            raise ValueError("steps must be a list of integers")
+        if len(steps) > 8:
+            raise ValueError("max 8 sequence steps")
+
+        # sanitize to bytes
+        seq = [(int(x) & 0xFF) for x in steps]
+        if len(seq) < 8 and (len(seq) == 0 or seq[-1] != 0x00):
+            seq.append(0x00)  # terminator
+
+        async with self._i2c_lock:
+            self._mux_select_current()
+            # write into 0x04..0x0B
+            for i, b in enumerate(seq[:8]):
+                i2c_write(DRV_ADDR, 0x04 + i, b)
+            logger.info(f"Programmed sequence: {seq[:8]}")
+
+    async def play_sequence(self) -> None:
+        """
+        Play the programmed sequence. MODE=Internal Trigger, GO=1.
+        """
+        async with self._i2c_lock:
+            self._mux_select_current()
+            i2c_write(DRV_ADDR, 0x01, 0x00)  # MODE: internal trigger, standby=0
+            i2c_write(DRV_ADDR, 0x0C, 0x01)  # GO
+            logger.info("Sequence PLAY")
+
+    async def stop_sequence(self) -> None:
+        """
+        Stop playback quickly by forcing Standby (bit6). 
+        Next play clears it back to 0x00.
+        """
+        async with self._i2c_lock:
+            self._mux_select_current()
+            i2c_write(DRV_ADDR, 0x01, 0x40)  # MODE: standby bit set
+            logger.info("Sequence STOP (standby)")
+    
+    async def get_timing_offsets(self) -> dict:
+        """
+        Read Overdrive/Sustain+/Sustain-/Brake time offsets (0x0D..0x10), 0..255 each.
+        """
+        async with self._i2c_lock:
+            if hasattr(self, "_mux_select_current"):
+                self._mux_select_current()
+            try:
+                data = i2c_read_reg(DRV_ADDR, 0x0D, 4)  # 0x0D..0x10
+                ovr, sus_p, sus_n, brk = data[0], data[1], data[2], data[3]
+                logger.info(f"Timing offsets read: {ovr},{sus_p},{sus_n},{brk}")
+                return {
+                    "overdrive": int(ovr),
+                    "sustain_pos": int(sus_p),
+                    "sustain_neg": int(sus_n),
+                    "brake": int(brk),
+                }
+            except Exception as e:
+                logger.error(f"get_timing_offsets failed: {e}")
+                raise
+
+    async def set_timing_offsets(self, overdrive: int, sustain_pos: int, sustain_neg: int, brake: int, ) -> None:
+        """
+        Write Overdrive/Sustain+/Sustain-/Brake time offsets (0x0D..0x10). Values clamped to 0..255.
+        """
+        def _clamp(v: int) -> int: return max(0, min(255, int(v)))
+        ovr, susP, susN, brk = _clamp(overdrive), _clamp(sustain_pos), _clamp(sustain_neg), _clamp(brake)
+        async with self._i2c_lock:
+            if hasattr(self, "_mux_select_current"):
+                self._mux_select_current()
+            i2c_write(DRV_ADDR, 0x0D, ovr)
+            i2c_write(DRV_ADDR, 0x0E, susP)
+            i2c_write(DRV_ADDR, 0x0F, susN)
+            i2c_write(DRV_ADDR, 0x10, brk)
+            logger.info(f"Timing offsets set: {ovr},{susP},{susN},{brk}")
+        s = _load_settings()
+        s["last_offsets"] = {"overdrive": ovr, "sustain_pos": susP, "sustain_neg": susN, "brake": brk}
+        _save_settings(s)
+
+    async def set_sniffer_autostart(self, enabled: bool) -> None:
+        s = _load_settings()
+        s["autostart_sniffer"] = bool(enabled)
+        _save_settings(s)
+        logger.info(f"sniffer autostart set to {s['autostart_sniffer']}")
+    
+    # --- reset DRV2605 function
+    
+    async def reset_device(self) -> None:
+        """
+        Soft-reset sequence for DRV2605:
+        - stop playback (GO=0)
+        - enter standby (MODE.6=1)
+        - briefly enable Hi-Z (LIBSEL.4=1) then clear
+        - leave standby (MODE.6=0)
+        """
+        async with self._i2c_lock:
+            try:
+                if hasattr(self, "_mux_select_current"):
+                    self._mux_select_current()
+
+                # Stop any active playback
+                try:
+                    i2c_write(DRV_ADDR, 0x0C, 0x00)  # GO=0
+                except Exception:
+                    pass  # ignore if GO isn't set
+
+                # Standby on
+                _rmw_u8(DRV_ADDR, 0x01, clear_mask=0, set_mask=(1 << 6))
+
+                # Hi-Z pulse
+                _rmw_u8(DRV_ADDR, 0x03, clear_mask=0, set_mask=(1 << 4))
+                await asyncio.sleep(0.01)
+                _rmw_u8(DRV_ADDR, 0x03, clear_mask=(1 << 4), set_mask=0)
+
+                # Standby off
+                _rmw_u8(DRV_ADDR, 0x01, clear_mask=(1 << 6), set_mask=0)
+
+                logger.info("reset_device: completed")
+            except Exception as e:
+                logger.error(f"reset_device failed: {e}")
+                raise RuntimeError(f"reset failed: {e}")
+
+    # --- Flags getter for toggle buttons in the Frontend
+    async def get_runtime_flags(self) -> dict:
+        """
+        Return current booleans so UI toggles can stay in sync.
+        """
+        async with self._i2c_lock:
+            if hasattr(self, "_mux_select_current"):
+                self._mux_select_current()
+            mode = _read_u8(DRV_ADDR, REG_MODE)
+            lib  = _read_u8(DRV_ADDR, REG_LIBSEL)
+        s = _load_settings()
+        return {
+            "standby": bool(mode & 0x40),
+            "hi_z":    bool(lib  & 0x10),
+            "sniffer": bool(self.sniffer_process),
+            "use_mux": bool(self.use_mux),
+            "autostart_sniffer": bool(s.get("autostart_sniffer", False)),
+        }
 
     # ----- lifecycle -----
 
     async def _main(self):
-        # Ensure required kernel modules for your features (may fail without root)
+        # Ensure required kernel modules for features (may fail without root)
         for mod in ("i2c-dev", "usbmon"):
             p = subprocess.run(["modprobe", mod])
             if p.returncode != 0:
@@ -352,9 +623,38 @@ class Plugin:
             except Exception as e:
                 logger.warning(f"Opening {dev_path} failed: {e}")
 
-        logger.info(f"RumbleDeck backend started (I2C bus={I2C_BUS})")
-        # Optionally start sniffer here:
-        # await self.start_sniffer()
+        s = _load_settings()
+        self.use_mux = bool(s.get("use_mux", False))
+        self.mux_mask = int(s.get("mux_mask", 1)) or 1
+
+        if s.get("persist_hi_z", False):
+            await self.set_high_z(True)
+        if s.get("persist_standby", False):
+            await self.set_standby(True)
+
+        if s.get("last_lib") is not None:
+            try:
+                await self.set_library(int(s["last_lib"]))
+            except Exception as e:
+                logger.warning(f"Reapply library failed: {e}")
+
+        if isinstance(s.get("last_offsets"), dict):
+            lo = s["last_offsets"]
+            try:
+                await self.set_timing_offsets(
+                    int(lo.get("overdrive", 0)),
+                    int(lo.get("sustain_pos", 0)),
+                    int(lo.get("sustain_neg", 0)),
+                    int(lo.get("brake", 0)),
+                )
+            except Exception as e:
+                logger.warning(f"Reapply timing offsets failed: {e}")
+
+        if s.get("autostart_sniffer", False):
+            try:
+                await self.start_sniffer()
+            except Exception as e:
+                logger.warning(f"Autostart sniffer failed: {e}")
 
     async def _unload(self):
         await self.stop_sniffer()
