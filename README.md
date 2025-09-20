@@ -23,8 +23,14 @@ sudo steamos-readonly disable
 sudo pacman -Sy
 sudo pacman -S base-devel --needed
 sudo pacman -S make
-sudo pacman -S linux-api-headers gcc make base-devel --noconfirm
+sudo pacman -S glibc linux-api-headers gcc make base-devel --noconfirm
 sudo steamos-readonly enable
+```
+
+Headers often get corrupted during SteamOS updates. Reinstall if necessary
+```
+sudo pacman -Qk glibc | grep -v '0 altered files' || true
+sudo pacman -S glibc linux-api-headers gcc make base-devel -- noconfirm
 ```
 
 Automatically load usbmon on startup
