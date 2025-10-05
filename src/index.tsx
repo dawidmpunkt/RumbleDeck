@@ -15,7 +15,7 @@ import {
   toaster,
   routerHook
 } from "@decky/api"
-import { useEffect, useState, lazy, Suspense } from "react";
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import { MdOutlineVibration } from "react-icons/md";
 
 type Status = {
@@ -30,6 +30,11 @@ type Status = {
   hi_z: boolean;
   mode: number;     // 0..7
   library: number;  // 0..7
+};
+
+type SProps = {
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
 };
 
 // --- advanced pages
@@ -178,9 +183,16 @@ const SequencerPage = lazy(async () => ({
 }));
 
 // simple suspense wrapper
-function S({ children }: { children: JSX.Element }) {
-  return <Suspense fallback={<div className={staticClasses.Text}>Loading…</div>}>{children}</Suspense>;
+function S({ children, fallback }: SProps) {
+  return (
+    <Suspense
+      fallback={fallback ?? <div className={staticClasses.Text}>Loading…</div>}
+    >
+      {children}
+    </Suspense>
+  );
 }
+
 
 //import logo from "../assets/logo.png";
 
@@ -927,9 +939,9 @@ export default definePlugin(() => {
 	routerHook.addRoute(
 	  `${BASE}/drive`,
 	  () => (
-		<Suspense fallback={<div className={staticClasses.Text}>Loading…</div>}>
+		<S fallback={<div className={staticClasses.Text}>Loading…</div>}>
 		  <DrivePage />
-		</Suspense>
+		</S>
 	  ),
 	  { exact: true }
 	);
@@ -937,9 +949,9 @@ export default definePlugin(() => {
 	routerHook.addRoute(
 	  `${BASE}/timing`,
 	  () => (
-		<Suspense fallback={<div className={staticClasses.Text}>Loading…</div>}>
+		<S fallback={<div className={staticClasses.Text}>Loading…</div>}>
 		  <TimingPage />
-		</Suspense>
+		</S>
 	  ),
 	  { exact: true }
 	);
@@ -947,9 +959,9 @@ export default definePlugin(() => {
 	routerHook.addRoute(
 	  `${BASE}/sequencer`,
 	  () => (
-		<Suspense fallback={<div className={staticClasses.Text}>Loading…</div>}>
+		<S fallback={<div className={staticClasses.Text}>Loading…</div>}>
 		  <SequencerPage />
-		</Suspense>
+		</S>
 	  ),
 	  { exact: true }
 	);
